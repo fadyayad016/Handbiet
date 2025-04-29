@@ -5,29 +5,30 @@ const jwt = require('jsonwebtoken');
 
 const registerUser = async (userData) => {
     const { email, password, role, firstName, lastName, ...optionalData } = userData;
-
+  
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-        throw new Error('Email already in use');
+      throw new Error('Email already in use');
     }
-
+  
     const hashedPassword = await bcrypt.hash(password, 10);
-
+  
     const user = new User({
-        email,
-        password: hashedPassword,
-        role,
-        firstName,
-        lastName,
-        ...optionalData
+      email,
+      password: hashedPassword,
+      role,
+      firstName,
+      lastName,
+      ...optionalData,
     });
-
+  
     await user.save();
-
-    return { message: 'User registered successfully', userId: user._id };
-};
-
+  
+    return { message: 'User registered successfully'};
+  };
+  
+  
 
 const loginUser = async (userData) => {
     const { email, password } = userData;
@@ -41,7 +42,7 @@ const loginUser = async (userData) => {
     }
 
     const token = jwt.sign(
-        { id: existingUser._id, email: existingUser.email },
+        { id: existingUser._id, email: existingUser.email,role: existingUser.role },
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
     );
