@@ -17,10 +17,13 @@ app.use(express.json());
 // 👉 Import your route
 const authRoutes = require('./routes/authRoute.js');
 const userRoutes = require('./routes/userRoute.js');  
+const mealRoutes = require('./routes/mealRoutes.js');
+
 
 // 👉 Use the route with a base path
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/meals', mealRoutes);
 
 // Start server
 app.listen(PORT, () => {

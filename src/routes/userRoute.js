@@ -1,10 +1,10 @@
 const express = require('express');
 
 const user= require('../controllers/userController');
+const router = express.Router();
 const { validateRegister } = require('../validators/authValidator');
 
 const authMiddleware= require('../middlewares/authMiddleware');
-const router = express.Router();
 
 router.get('/getCurrentUser', authMiddleware,user.getCurrentUser)
 router.post('/updateCurrentUser', authMiddleware,user.updateCurrentUser)
