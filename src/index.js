@@ -15,10 +15,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // 👉 Import your route
-const authRoutes = require('./routes/userRoute.js');
+const authRoutes = require('./routes/authRoute.js');
+const userRoutes = require('./routes/userRoute.js');  
 
 // 👉 Use the route with a base path
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 
 // Start server
 app.listen(PORT, () => {
