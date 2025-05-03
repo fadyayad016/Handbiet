@@ -9,6 +9,11 @@ router.post('/', authMiddleware, mealController.addMeal);
 router.put('/:id', authMiddleware, mealController.updateMeal);
 router.delete('/:id', authMiddleware, mealController.deleteMeal);
 
+// //for cook
+// router.post('/favorites/cooks/:id', authMiddleware, userController.addFavoriteCook);
+//for meal 
+router.post('/favorites/:id', authMiddleware, mealController.addFavoriteMeal);  
+router.delete('/favorites/:id', authMiddleware, mealController.removeFavoriteMeal); 
 // Public
 router.get('/', mealController.browseMeals);
 

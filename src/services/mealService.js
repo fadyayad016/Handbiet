@@ -1,4 +1,6 @@
 const Meal = require('../models/Meal');
+const User = require('../models/userAuth');
+const mongoose = require('mongoose'); 
 
 const createMeal = async (cookId, data) => {
   const meal = new Meal({ ...data, cook: cookId });
@@ -36,10 +38,70 @@ const browseMeals = async (filters) => {
 };
 
 
-module.exports = {createMeal,getCookMeals,updateMeal,deleteMeal,browseMeals};
+const addFavoriteMeal = async (customerId, mealId) => {
+  const customer = await User.findById(customerId);
+  if (!customer) throw new Error('Customer not found');
+
+  // Ensure nested objects exist
+  if (!customer.customerProfile) {
+    customer.customerProfile = { favorites: { meals: [], cooks: [] } };
+  }
+
+  if (!customer.customerProfile.favorites) {
+    customer.customerProfile.favorites = { meals: [], cooks: [] };
+  }
+
+  if (!customer.customerProfile.favorites.meals) {
+    customer.customerProfile.favorites.meals = [];
+  }
+
+  // Prevent duplicate favorite meals
+  const alreadyFavorited = customer.customerProfile.favorites.meals.includes(mealId);
+  if (alreadyFavorited) {
+    return { message: 'Meal already in favorites', mealId };
+  }
+
+  customer.customerProfile.favorites.meals.push(mealId);
+  await customer.save();
+
+  return {
+    message: 'Meal added to favorites',
+    mealId
+  };
+};
+
+
+const removeFavoriteMeal = async (customerId, mealId) => {
+  const customer = await User.findById(customerId);
+  if (!customer) throw new Error('Customer not found');
+
+  const favorites = customer.customerProfile?.favorites?.meals;
+  if (!favorites) {
+    return { message: 'No favorite meals found', mealId };
+  }
+
+  const mealObjectId = new mongoose.Types.ObjectId(mealId);
+  const index = favorites.findIndex(id => id.equals(mealObjectId));
+
+  if (index === -1) {
+    return { message: 'Meal not found in favorites', mealId };
+  }
+
+  favorites.splice(index, 1);
+  await customer.save();
+
+  return {
+    message: 'Meal removed from favorites',
+    mealId
+  };
+};
+
+
+
+module.exports = { createMeal, getCookMeals, updateMeal, deleteMeal, browseMeals, addFavoriteMeal, removeFavoriteMeal };
 
 
 
 
 
-  
+

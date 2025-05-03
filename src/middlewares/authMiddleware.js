@@ -10,9 +10,11 @@ module.exports = (req, res, next) => {
     req.user = verified;
     next();
   } catch (error) {
-    res.status(400).json({ error: 'Invalid token' });
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.name === 'NotBeforeError') {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
   }
-};  
+};
 
 
 

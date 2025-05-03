@@ -13,11 +13,12 @@ const cookProfileSchema = new mongoose.Schema({
 }, { _id: false });
 
 const customerProfileSchema = new mongoose.Schema({
-  favorites: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }]
+  favorites: {
+    cooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    meals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Meal' }]
+  }
 }, { _id: false });
+
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },

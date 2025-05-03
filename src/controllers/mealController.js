@@ -44,3 +44,22 @@ exports.browseMeals = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+
+exports.addFavoriteMeal = async (req, res) => {
+  try {
+    const meal = await mealService.addFavoriteMeal(req.user.id, req.params.id);
+    res.status(200).json(meal);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
+
+exports.removeFavoriteMeal = async (req, res) => {
+  try {
+    const meal = await mealService.removeFavoriteMeal(req.user.id, req.params.id);
+    res.status(200).json(meal);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+}
