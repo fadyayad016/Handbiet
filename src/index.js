@@ -18,14 +18,14 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoute.js');
 const userRoutes = require('./routes/userRoute.js');  
 const mealRoutes = require('./routes/mealRoutes.js');
-// const cartRoutes = require('./routes/cartRouter.js'); 
+const cartRoutes = require('./routes/cartRouter.js'); 
 
 
 // 👉 Use the route with a base path
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/meals', mealRoutes);
-// app.use('/api/cart', cartRoutes);
+app.use('/api/cart', cartRoutes);
 
 
 // Start server

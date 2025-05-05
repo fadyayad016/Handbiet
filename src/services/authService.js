@@ -46,8 +46,15 @@ const loginUser = async (userData) => {
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
     );
+    
+    // console.log('Issued token payload:', {
+    //   id: existingUser._id,
+    //   email: existingUser.email,
+    //   role: existingUser.role
+    // });
 
     return { token };
+    
 
 }
 

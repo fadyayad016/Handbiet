@@ -7,6 +7,8 @@ module.exports = (req, res, next) => {
 
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded token in middleware:', verified); // <-- Add this
+
     req.user = verified;
     next();
   } catch (error) {
