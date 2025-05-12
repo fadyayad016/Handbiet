@@ -3,6 +3,7 @@ require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,6 +20,7 @@ const authRoutes = require('./routes/authRoute.js');
 const userRoutes = require('./routes/userRoute.js');  
 const mealRoutes = require('./routes/mealRoutes.js');
 const cartRoutes = require('./routes/cartRouter.js'); 
+const oerderRoutes = require('./routes/orderRouter.js'); 
 
 
 // 👉 Use the route with a base path
@@ -26,7 +28,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/order', oerderRoutes);
 
+// Custom Error Handler
+app.use((err, req, res, next) => {
+  console.error(err.stack); // Log error for debugging
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Something went wrong!',
+    // Include stack trace only in development
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+});
 
 // Start server
 app.listen(PORT, () => {

@@ -1,39 +1,28 @@
 const cartService = require('../services/cartService');
+const asyncHandler = require('express-async-handler');
 
-exports.getCart = async (req, res) => {
-  try {
-    const cart = await cartService.getCart(req.user);
-    res.status(200).json(cart);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+exports.getCart = asyncHandler(async (req, res) => {
+  const cart = await cartService.getCart(req.user);
+  res.status(200).json(cart);
 
-exports.addToCart = async (req, res) => {
-  try {
-    console.log('req.user in addToCart:', req.user); // ✅
+});
 
-    const result = await cartService.addToCart(req.user, req.body); 
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+exports.addToCart = asyncHandler(async (req, res) => {
+  console.log('req.user in addToCart:', req.user);
 
-exports.updateCartItem = async (req, res) => {
-  try {
-    const result = await cartService.updateCartItem(req.user, req.body);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+  const result = await cartService.addToCart(req.user, req.body);
+  res.status(200).json(result);
 
-exports.removeCartItem = async (req, res) => {
-  try {
-    const result = await cartService.removeFromCart(req.user, req.params.mealId);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+});
+
+exports.updateCartItem = asyncHandler(async (req, res) => {
+  const result = await cartService.updateCartItem(req.user, req.body);
+  res.status(200).json(result);
+
+});
+
+exports.removeCartItem = asyncHandler(async (req, res) => {
+  const result = await cartService.removeFromCart(req.user, req.params.mealId);
+  res.status(200).json(result);
+
+});

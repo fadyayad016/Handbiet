@@ -1,6 +1,7 @@
 const Joi = require('joi');
 const jwt = require('jsonwebtoken');
 
+
 exports.validateRegister = (req, res, next) => {
   const schema = Joi.object({
     email: Joi.string().email().required(),

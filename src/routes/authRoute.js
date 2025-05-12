@@ -14,6 +14,9 @@ router.post('/register', validateRegister, authController.register);
 
 router.post('/Login', authController.login);
 
+router.post('/refreshAccessToken', authController.refreshToken);
+
+
 
 
 

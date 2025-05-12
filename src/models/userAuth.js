@@ -1,28 +1,14 @@
+
 const mongoose = require('mongoose');
-
-const addressSchema = new mongoose.Schema({
-  street: String,
-  city: String,
-  state: String,
-  zipCode: String
-}, { _id: false });
-
-const cookProfileSchema = new mongoose.Schema({
-  bio: String,
-  cuisineSpecialties: [String]
-}, { _id: false });
-
-const customerProfileSchema = new mongoose.Schema({
-  favorites: {
-    cooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    meals: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Meal' }]
-  }
-}, { _id: false });
+const addressSchema = require('./Address');
+const cookProfileSchema = require('./CookProfile');
+const customerProfileSchema = require('./CustomerProfile');
 
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  password: { type: String ,required: true },
+  password: { type: String, required: true },
+  refreshToken: { type: String },
   role: { type: String, enum: ['customer', 'cook', 'admin'], required: true },
   firstName: String,
   lastName: String,

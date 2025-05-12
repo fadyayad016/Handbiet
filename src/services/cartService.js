@@ -24,7 +24,7 @@ const getCart = async (user) => {
 };
 
 const addToCart = async (user, data) => {
-  console.log('user received in addToCart:', user); // ✅
+  console.log('user received in addToCart:', user);
 
   ensureCustomerRole(user);
 

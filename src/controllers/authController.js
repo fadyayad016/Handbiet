@@ -1,32 +1,36 @@
 const authService = require('../services/authService.js');
+const asyncHandler = require('express-async-handler');
 
 
 
 
-exports.register = async (req, res) => {
-    try {
-      const userData = req.body;
-      const result = await authService.registerUser(userData);
-      res.status(201).json(result);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  };
+exports.register = asyncHandler(async (req, res) => {
+  const userData = req.body;
+  const result = await authService.registerUser(userData);
+  res.status(201).json(result);
+});
 
 
+
+
+exports.login = asyncHandler(async (req, res) => {
+  const userData = req.body;
+  const result = await authService.loginUser(userData);
+  res.status(201).json(result);
+
+});
+
+
+exports.refreshToken = asyncHandler(async (req, res) => {
   
-
-exports.login = async (req, res) => {
-    try {
-        const userData = req.body;
-        const result = await authService.loginUser(userData);
-        res.status(201).json(result);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-
-
-};
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is required' });
+  }
+  const result = await authService.refreshAccessToken(refreshToken);
+  res.status(200).json(result);
+ 
+})
 
 
 
