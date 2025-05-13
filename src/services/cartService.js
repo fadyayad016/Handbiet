@@ -1,16 +1,9 @@
 const Cart = require('../models/Cart');
 const mongoose = require('mongoose');
 
-//check if the user is a customer   
-const ensureCustomerRole = (user) => {
-  console.log('User role:', user.role); // Debugging line
-  if (user.role !== 'customer') {
-    throw new Error('Access denied. Only customers can access the cart.');
-  }
-};
+
 
 const getCart = async (user) => {
-  ensureCustomerRole(user);
 
   try {
     let cart = await Cart.findOne({ customer: user.id }).populate('items.meal');
@@ -26,7 +19,6 @@ const getCart = async (user) => {
 const addToCart = async (user, data) => {
   console.log('user received in addToCart:', user);
 
-  ensureCustomerRole(user);
 
 
   const mealObjectId = new mongoose.Types.ObjectId(data.mealId); 
@@ -54,7 +46,6 @@ const addToCart = async (user, data) => {
 };
 
 const updateCartItem = async (user, data) => {
-  ensureCustomerRole(user);
 
   const mealObjectId = new  mongoose.Types.ObjectId(data.mealId);
   const cart = await Cart.findOne({ customer: user.id });
@@ -77,7 +68,6 @@ const updateCartItem = async (user, data) => {
 };
 
 const removeFromCart = async (user, mealId) => {
-  ensureCustomerRole(user);
 
   const mealObjectId = new  mongoose.Types.ObjectId(mealId);
   const cart = await Cart.findOne({ customer: user.id });

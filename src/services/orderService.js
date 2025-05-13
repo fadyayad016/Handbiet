@@ -1,17 +1,10 @@
 const Order = require('../models/Order');
 const mongoose = require('mongoose');
 
-//check if the user is a customer   
-const ensureCustomerRole = (user) => {
-    console.log('User role:', user.role); // Debugging line
-    if (user.role !== 'customer') {
-        throw new Error('Access denied. Only customers can access the cart.');
-    }
-};
+
 
 const createOrder = async (user, data) => {
     console.log('Creating order for user:', user); // Debugging line
-    ensureCustomerRole(user);
 
     const { cookId, meals, deliveryAddress } = data;
 
@@ -46,7 +39,6 @@ const createOrder = async (user, data) => {
 };
 
 const getOrders = async (user) => {
-    ensureCustomerRole(user);
 
     // Fetch orders for the customer
     const orders = await Order.find({ customer: user.id }).populate('meals.meal').populate('cook');
