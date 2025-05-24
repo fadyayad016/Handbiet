@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"Building the project...\""
   },
   "keywords": [],
   "author": "",
@@ -12,6 +15,7 @@
   "dependencies": {
     "bcrypt": "^5.1.1",
     "chalk": "^5.4.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "errorhandler": "^1.5.1",
     "express": "^5.1.0",
