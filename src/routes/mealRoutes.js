@@ -43,7 +43,8 @@ router.get(
   mealController.getFavoriteMeals
 );
 // Public
-router.get("/:id", mealController.getMealById);
 router.get("/", mealController.browseMeals);
+router.get("/BestSellerMeal", mealController.getBestSellerMeal);
+router.get("/:id", mealController.getMealById);
 
 module.exports = router;

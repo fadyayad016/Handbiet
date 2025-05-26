@@ -18,8 +18,16 @@ const mealSchema = new mongoose.Schema(
     },
     images: [String],
     rating: { type: Number, default: 0.0, min: 0, max: 5.0 },
+    salesCount: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'completed', 'cancelled'],
+      default: 'pending'
+    },
+
   },
   { timestamps: true }
 );
+mealSchema.index({ name: 1, cook: 1, status: 1 }, { unique: true });
 
 module.exports = mongoose.model("Meal", mealSchema);

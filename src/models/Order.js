@@ -13,11 +13,7 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  cook: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+ 
   meals: [{
     meal: {
       type: mongoose.Schema.Types.ObjectId,

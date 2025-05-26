@@ -30,7 +30,13 @@ const browseMeals = async (filters) => {
   const query = {};
   if (filters.cuisineType) query.cuisineType = filters.cuisineType;
   if (filters.maxPrice) query.price = { $lte: filters.maxPrice };
-  if (filters.availableDay) query["availability.days"] = filters.availableDay;
+
+  if (filters.availableDay) {
+    query["availability.days"] = filters.availableDay;
+  }
+  if (filters.name) {
+    query.name = { $regex: filters.name, $options: "i" };
+  }
 
   return await Meal.find(query).populate(
     "cook",
@@ -101,6 +107,25 @@ const removeFavoriteMeal = async (customerId, mealId) => {
     message: "Meal removed from favorites",
     mealId,
   };
+};
+
+const getBestSellerMeal = async () => {
+  const bestmeal = await Meal.findOne()
+    .sort({ salesCount: -1 })
+    .populate("cook", "firstName lastName profilePicture")
+    .limit(1);
+  return bestmeal;
+};
+
+module.exports = {
+  createMeal,
+  getCookMeals,
+  updateMeal,
+  deleteMeal,
+  browseMeals,
+  addFavoriteMeal,
+  removeFavoriteMeal,
+  getBestSellerMeal,
 };
 
 const getFavoriteMeals = async (customerId) => {
