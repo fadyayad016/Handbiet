@@ -39,7 +39,18 @@ exports.removeFavoriteMeal = asyncHandler(async (req, res) => {
   const meal = await mealService.removeFavoriteMeal(req.user.id, req.params.id);
   res.status(200).json(meal);
 });
+exports.getMealById = asyncHandler(async (req, res) => {
+  const meal = await mealService.getMealById(req.params.id);
+  if (!meal) {
+    return res.status(404).json({ message: "Meal not found" });
+  }
+  res.status(200).json(meal);
+});
 
+exports.getFavoriteMeals = asyncHandler(async (req, res) => {
+  const meals = await mealService.getFavoriteMeals(req.user.id);
+  res.status(200).json(meals);
+});
 exports.getBestSellerMeal = asyncHandler(async (req, res) => {
   const meals = await mealService.getBestSellerMeal();
   res.status(200).json(meals);
