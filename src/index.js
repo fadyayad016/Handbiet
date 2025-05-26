@@ -22,6 +22,7 @@ const userRoutes = require("./routes/userRoute.js");
 const mealRoutes = require("./routes/mealRoutes.js");
 const cartRoutes = require("./routes/cartRouter.js");
 const oerderRoutes = require("./routes/orderRouter.js");
+const adminRoutes = require("./routes/adminRouter.js");  
 
 // 👉 Use the route with a base path
 app.use("/api/auth", authRoutes);
@@ -29,6 +30,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/meals", mealRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", oerderRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Custom Error Handler
 app.use((err, req, res, next) => {

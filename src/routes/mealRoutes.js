@@ -18,5 +18,6 @@ router.post('/favorites/:id', authMiddleware,ensureCustomerRole, mealController.
 router.delete('/favorites/:id', authMiddleware,ensureCustomerRole, mealController.removeFavoriteMeal); 
 // Public
 router.get('/', mealController.browseMeals);
+router.get('/BestSellerMeal',mealController.getBestSellerMeal)
 
 module.exports = router;

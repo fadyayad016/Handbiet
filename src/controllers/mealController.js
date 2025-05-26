@@ -42,3 +42,9 @@ exports.removeFavoriteMeal = asyncHandler(async (req, res) => {
   res.status(200).json(meal);
 
 });
+
+
+exports.getBestSellerMeal = asyncHandler(async (req, res) => {
+  const meals = await mealService.getBestSellerMeal();
+  res.status(200).json(meals);
+});

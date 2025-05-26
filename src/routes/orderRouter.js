@@ -1,5 +1,6 @@
 const express = require('express');
 const ensureCustomerRole = require('../middlewares/ensureCustomerRole');
+const ensureCookRole = require('../middlewares/ensureCookRole');
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.post('/', authMiddleware,ensureCustomerRole, orderController.createOrder)
 
 router.get('/', authMiddleware,ensureCustomerRole, orderController.getOrders); 
 
+router.get('/cook', authMiddleware, ensureCookRole, orderController.getOrderByCookId);
 
 
 module.exports = router;

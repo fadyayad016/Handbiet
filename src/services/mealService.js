@@ -1,6 +1,6 @@
 const Meal = require('../models/Meal');
 const User = require('../models/userAuth');
-const mongoose = require('mongoose'); 
+const mongoose = require('mongoose');
 
 const createMeal = async (cookId, data) => {
   const meal = new Meal({ ...data, cook: cookId });
@@ -32,7 +32,13 @@ const browseMeals = async (filters) => {
   const query = {};
   if (filters.cuisineType) query.cuisineType = filters.cuisineType;
   if (filters.maxPrice) query.price = { $lte: filters.maxPrice };
-  if (filters.availableDay) query['availability.days'] = filters.availableDay;
+
+  if (filters.availableDay) {
+    query['availability.days'] = filters.availableDay;
+  }
+  if (filters.name) {
+    query.name = { $regex: filters.name, $options: 'i' };
+  }
 
   return await Meal.find(query).populate('cook', 'firstName lastName profilePicture');
 };
@@ -96,9 +102,17 @@ const removeFavoriteMeal = async (customerId, mealId) => {
   };
 };
 
+const getBestSellerMeal = async () => {
+  const bestmeal = await Meal.findOne()
+    .sort({ salesCount: -1 })
+    .populate('cook', 'firstName lastName profilePicture')
+    .limit(1);
+  return bestmeal;
+
+}
 
 
-module.exports = { createMeal, getCookMeals, updateMeal, deleteMeal, browseMeals, addFavoriteMeal, removeFavoriteMeal };
+module.exports = { createMeal, getCookMeals, updateMeal, deleteMeal, browseMeals, addFavoriteMeal, removeFavoriteMeal, getBestSellerMeal };
 
 
 
