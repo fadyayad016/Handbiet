@@ -1,6 +1,6 @@
-const Meal = require('../models/Meal');
-const User = require('../models/userAuth');
-const mongoose = require('mongoose'); 
+const Meal = require("../models/Meal");
+const User = require("../models/userAuth");
+const mongoose = require("mongoose");
 
 const createMeal = async (cookId, data) => {
   const meal = new Meal({ ...data, cook: cookId });
@@ -13,34 +13,41 @@ const getCookMeals = async (cookId) => {
 };
 
 const updateMeal = async (id, cookId, data) => {
-  const meal = await Meal.findOneAndUpdate(
-    { _id: id, cook: cookId },
-    data,
-    { new: true }
-  );
-  if (!meal) throw new Error('Meal not found or unauthorized');
+  const meal = await Meal.findOneAndUpdate({ _id: id, cook: cookId }, data, {
+    new: true,
+  });
+  if (!meal) throw new Error("Meal not found or unauthorized");
   return meal;
 };
 
 const deleteMeal = async (id, cookId) => {
   const meal = await Meal.findOneAndDelete({ _id: id, cook: cookId });
-  if (!meal) throw new Error('Meal not found or unauthorized');
-  return { message: 'Meal deleted' };
+  if (!meal) throw new Error("Meal not found or unauthorized");
+  return { message: "Meal deleted" };
 };
 
 const browseMeals = async (filters) => {
   const query = {};
   if (filters.cuisineType) query.cuisineType = filters.cuisineType;
   if (filters.maxPrice) query.price = { $lte: filters.maxPrice };
-  if (filters.availableDay) query['availability.days'] = filters.availableDay;
+  if (filters.availableDay) query["availability.days"] = filters.availableDay;
 
-  return await Meal.find(query).populate('cook', 'firstName lastName profilePicture');
+  return await Meal.find(query).populate(
+    "cook",
+    "firstName lastName profilePicture"
+  );
 };
 
+const getMealById = async (id) => {
+  return await Meal.findById(id).populate(
+    "cook",
+    "firstName lastName profilePicture"
+  );
+};
 
 const addFavoriteMeal = async (customerId, mealId) => {
   const customer = await User.findById(customerId);
-  if (!customer) throw new Error('Customer not found');
+  if (!customer) throw new Error("Customer not found");
 
   // Ensure nested objects exist
   if (!customer.customerProfile) {
@@ -56,52 +63,70 @@ const addFavoriteMeal = async (customerId, mealId) => {
   }
 
   // Prevent duplicate favorite meals
-  const alreadyFavorited = customer.customerProfile.favorites.meals.includes(mealId);
+  const alreadyFavorited =
+    customer.customerProfile.favorites.meals.includes(mealId);
   if (alreadyFavorited) {
-    return { message: 'Meal already in favorites', mealId };
+    return { message: "Meal already in favorites", mealId };
   }
 
   customer.customerProfile.favorites.meals.push(mealId);
   await customer.save();
 
   return {
-    message: 'Meal added to favorites',
-    mealId
+    message: "Meal added to favorites",
+    mealId,
   };
 };
 
-
 const removeFavoriteMeal = async (customerId, mealId) => {
   const customer = await User.findById(customerId);
-  if (!customer) throw new Error('Customer not found');
+  if (!customer) throw new Error("Customer not found");
 
   const favorites = customer.customerProfile?.favorites?.meals;
   if (!favorites) {
-    return { message: 'No favorite meals found', mealId };
+    return { message: "No favorite meals found", mealId };
   }
 
   const mealObjectId = new mongoose.Types.ObjectId(mealId);
-  const index = favorites.findIndex(id => id.equals(mealObjectId));
+  const index = favorites.findIndex((id) => id.equals(mealObjectId));
 
   if (index === -1) {
-    return { message: 'Meal not found in favorites', mealId };
+    return { message: "Meal not found in favorites", mealId };
   }
 
   favorites.splice(index, 1);
   await customer.save();
 
   return {
-    message: 'Meal removed from favorites',
-    mealId
+    message: "Meal removed from favorites",
+    mealId,
   };
 };
 
+const getFavoriteMeals = async (customerId) => {
+  const customer = await User.findById(customerId).lean();
+  if (
+    !customer ||
+    !customer.customerProfile ||
+    !customer.customerProfile.favorites ||
+    !customer.customerProfile.favorites.meals
+  ) {
+    return [];
+  }
+  // Populate favorite meals
+  return await Meal.find({
+    _id: { $in: customer.customerProfile.favorites.meals },
+  }).populate("cook", "firstName lastName profilePicture");
+};
 
-
-module.exports = { createMeal, getCookMeals, updateMeal, deleteMeal, browseMeals, addFavoriteMeal, removeFavoriteMeal };
-
-
-
-
-
-
+module.exports = {
+  createMeal,
+  getCookMeals,
+  updateMeal,
+  deleteMeal,
+  browseMeals,
+  addFavoriteMeal,
+  removeFavoriteMeal,
+  getMealById,
+  getFavoriteMeals,
+};
