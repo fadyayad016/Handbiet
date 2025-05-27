@@ -12,7 +12,9 @@ const userSchema = new mongoose.Schema(
     firstName: String,
     lastName: String,
     profilePicture: String,
-    address: addressSchema,
+    mainAddress: addressSchema,
+        addresses: [addressSchema],         
+
     cookProfile: cookProfileSchema,
     customerProfile: customerProfileSchema,
   },

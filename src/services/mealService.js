@@ -3,7 +3,7 @@ const User = require("../models/userAuth");
 const mongoose = require("mongoose");
 
 const createMeal = async (cookId, data) => {
-  const meal = new Meal({ ...data, cook: cookId });
+  const meal = new Meal({ ...data, cook: cookId, mainImage: data.mainImage, additionalImages: data.additionalImages || [] });
   await meal.save();
   return meal;
 };
@@ -109,24 +109,7 @@ const removeFavoriteMeal = async (customerId, mealId) => {
   };
 };
 
-const getBestSellerMeal = async () => {
-  const bestmeal = await Meal.findOne()
-    .sort({ salesCount: -1 })
-    .populate("cook", "firstName lastName profilePicture")
-    .limit(1);
-  return bestmeal;
-};
 
-module.exports = {
-  createMeal,
-  getCookMeals,
-  updateMeal,
-  deleteMeal,
-  browseMeals,
-  addFavoriteMeal,
-  removeFavoriteMeal,
-  getBestSellerMeal,
-};
 
 const getFavoriteMeals = async (customerId) => {
   const customer = await User.findById(customerId).lean();
@@ -143,6 +126,29 @@ const getFavoriteMeals = async (customerId) => {
     _id: { $in: customer.customerProfile.favorites.meals },
   }).populate("cook", "firstName lastName profilePicture");
 };
+const getBestSellerMeal = async () => {
+  const bestmeal = await Meal.findOne()
+    .sort({ salesCount: -1 })
+    .populate("cook", "firstName lastName profilePicture")
+    .limit(1);
+  return bestmeal;
+};
+
+const getRandomMeal = async (takeNumber = 1) => {
+  const totalMeals = await Meal.countDocuments();
+  if (totalMeals === 0) {
+    throw new Error('No meals found');
+  }
+
+  const limit = Math.min(takeNumber, totalMeals);
+
+  const randomMeals = await Meal.aggregate([
+    { $sample: { size: limit } }
+  ]);
+
+  return randomMeals;
+};
+  
 
 module.exports = {
   createMeal,
@@ -154,4 +160,6 @@ module.exports = {
   removeFavoriteMeal,
   getMealById,
   getFavoriteMeals,
+  getBestSellerMeal,
+  getRandomMeal
 };

@@ -45,6 +45,7 @@ router.get(
 // Public
 router.get("/", mealController.browseMeals);
 router.get("/BestSellerMeal", mealController.getBestSellerMeal);
+router.get("/random", mealController.getRandomMeals);
 router.get("/:id", mealController.getMealById);
 
 module.exports = router;

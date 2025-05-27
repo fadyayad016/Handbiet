@@ -55,3 +55,8 @@ exports.getBestSellerMeal = asyncHandler(async (req, res) => {
   const meals = await mealService.getBestSellerMeal();
   res.status(200).json(meals);
 });
+exports.getRandomMeals = asyncHandler(async (req, res) => {
+  const take = parseInt(req.query.take) || 1;
+  const meals = await mealService.getRandomMeal(take);
+  res.status(200).json(meals);
+});

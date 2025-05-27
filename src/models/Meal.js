@@ -16,7 +16,8 @@ const mealSchema = new mongoose.Schema(
       days: [String],
       availableUntil: Date,
     },
-    images: [String],
+    mainImage: { type: String }, 
+    additionalImages: [String],  
     rating: { type: Number, default: 0.0, min: 0, max: 5.0 },
     salesCount: { type: Number, default: 0 },
     status: {

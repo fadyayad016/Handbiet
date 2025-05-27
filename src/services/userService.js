@@ -188,4 +188,53 @@ const removeFavoriteCook = async (customerId, cookId) => {
 
 
 
-  module.exports = { getCurrentUser , updateCurrentUser,getAllCooks, getCookById, getFavoriteCooks,addFavoriteCook,removeFavoriteCook};
+
+const addCustomerAdress = async (userId, addressData) => {
+  const { mainAddress, additionalAddresses } = addressData;
+
+  const validateAddress = (address) => {
+    const requiredFields = ['street', 'city', 'state', 'zipCode'];
+    for (const field of requiredFields) {
+      if (!address[field] || typeof address[field] !== 'string' || address[field].trim() === '') {
+        throw new Error(`Invalid address data: Missing or empty ${field}`);
+      }
+    }
+  };
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Set or update main address
+  if (mainAddress) {
+    validateAddress(mainAddress);
+    user.mainAddress = mainAddress;
+  }
+
+  // Add additional addresses if provided
+  if (Array.isArray(additionalAddresses)) {
+    for (const addr of additionalAddresses) {
+      validateAddress(addr);
+    }
+
+    if (!Array.isArray(user.addresses)) {
+      user.addresses = [];
+    }
+
+    user.addresses.push(...additionalAddresses);
+  }
+
+  await user.save();
+
+  return {
+    message: 'Address added successfully',
+    mainAddress: user.mainAddress,
+    additionalAddresses: user.addresses
+  };
+};
+
+
+
+
+  module.exports = { getCurrentUser , updateCurrentUser,getAllCooks, getCookById, getFavoriteCooks,addFavoriteCook,removeFavoriteCook,addCustomerAdress};
