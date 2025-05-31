@@ -14,7 +14,8 @@ dbconnect();
 // Middleware
 app.use(cors); // Add CORS middleware
 app.use(morgan("dev"));
-app.use(express.json());
+// For Error: request entity too large
+app.use(express.json({ limit: "6mb" }));
 
 // 👉 Import your route
 const authRoutes = require("./routes/authRoute.js");
@@ -22,8 +23,7 @@ const userRoutes = require("./routes/userRoute.js");
 const mealRoutes = require("./routes/mealRoutes.js");
 const cartRoutes = require("./routes/cartRouter.js");
 const oerderRoutes = require("./routes/orderRouter.js");
-const adminRoutes = require("./routes/adminRouter.js");  
-
+const adminRoutes = require("./routes/adminRouter.js");
 // 👉 Use the route with a base path
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
