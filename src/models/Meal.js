@@ -22,7 +22,7 @@ const mealSchema = new mongoose.Schema(
     salesCount: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'completed', 'cancelled'],
+      enum: ['pending', 'approved', 'rejected'],
       default: 'pending'
     },
 

@@ -17,6 +17,17 @@ exports.createOrder = asyncHandler(async (req, res) => {
 });
 
 
+
+exports.getOrderByCookId = asyncHandler(async (req, res) => {
+    const orders = await orderService.getOrderByCookId(req.user);
+    
+    res.status(200).json({
+        message: 'Orders for cook fetched successfully',
+        orders,
+    });
+    
+})
+
 exports.getOrders = asyncHandler(async (req, res) => {
     const orders = await orderService.getOrders(req.user);
 
@@ -26,14 +37,3 @@ exports.getOrders = asyncHandler(async (req, res) => {
     });
 
 });
-
-exports.getOrderByCookId = asyncHandler(async (req, res) => {
-    const orders = await orderService.getOrderByCookId(req.user);
-
-    res.status(200).json({
-        message: 'Orders for cook fetched successfully',
-        orders,
-    });
-
-})
-

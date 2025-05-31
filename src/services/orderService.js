@@ -4,49 +4,110 @@ const mongoose = require('mongoose');
 
 
 
+
+
 const createOrder = async (user, data) => {
-    console.log('Creating order for user:', user); // Debugging line
+  const { meals, deliveryAddress } = data;
 
-const { meals, deliveryAddress } = data;
-
-if (!meals?.length || !deliveryAddress) {
+  if (!meals?.length || !deliveryAddress) {
     throw new Error("Invalid order data");
-}
+  }
 
-    // Check for an existing open order (optional logic, can be skipped or altered)
-    let existingOrder = await Order.findOne({ customer: user.id, status: 'pending' });
-    if (existingOrder) {
-        throw new Error("You already have a pending order");
+  // Fetch meal details to get their cooks
+  const mealDocs = await Meal.find({ _id: { $in: meals.map(m => m.mealId) } });
+
+  // Map meals to include cookId and quantity
+  const mealsWithCook = meals.map(item => {
+    const mealDoc = mealDocs.find(m => m._id.toString() === item.mealId);
+    if (!mealDoc) throw new Error(`Meal not found: ${item.mealId}`);
+
+    return {
+      mealId: item.mealId,
+      quantity: item.quantity,
+      cookId: mealDoc.cook,
+      price: mealDoc.price,
+    };
+  });
+
+  // Group meals by cook
+  const mealsByCook = {};
+  for (const item of mealsWithCook) {
+    if (!mealsByCook[item.cookId]) {
+      mealsByCook[item.cookId] = [];
     }
+    mealsByCook[item.cookId].push(item);
+  }
 
-    // Prepare order items
-    const orderItems = meals.map(item => ({
-        meal: new mongoose.Types.ObjectId(item.mealId),
-        quantity: item.quantity
+  const createdOrders = [];
+
+  // Create one order per cook
+  for (const [cookId, items] of Object.entries(mealsByCook)) {
+    const orderItems = items.map(i => ({
+      meal: new mongoose.Types.ObjectId(i.mealId),
+      quantity: i.quantity
     }));
 
-    // Create order
+    const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
     const newOrder = new Order({
-        customer: user.id,
-        meals: orderItems,
-        deliveryAddress,
-        status: 'pending',
+      customer: user.id,
+      cook: cookId,
+      meals: orderItems,
+      deliveryAddress,
+      totalPrice,
+      status: 'pending',
     });
 
     await newOrder.save();
-     for (const item of orderItems) {
-        await Meal.findByIdAndUpdate(item.meal, {
-            $inc: { salesCount: item.quantity }
-        });
+
+    // Update meal sales count
+    for (const item of items) {
+      await Meal.findByIdAndUpdate(item.mealId, {
+        $inc: { salesCount: item.quantity }
+      });
     }
-    return newOrder;
+
+    createdOrders.push(newOrder);
+  }
+
+  return createdOrders;
 };
 
-const getOrders = async (user) => {
 
-    // Fetch orders for the customer
-    const orders = await Order.find({ customer: user.id }).populate('meals.meal').populate('cook');
-    return orders;
+const getOrders = async (user) => {
+  const orders = await Order.find({ customer: user.id })
+    .sort({ createdAt: -1 }) 
+    .populate({
+      path: 'meals.meal',
+      select: 'name price mainImage'
+    })
+    .populate({
+      path: 'cook',
+      select: 'firstName lastName profilePicture'
+    });
+    
+  const formattedOrders = orders.map(order => ({
+  id: order._id,
+  status: order.status,
+  totalPrice: order.totalPrice,
+  createdAt: order.createdAt,
+  cook: order.cook ? {
+    id: order.cook._id,
+    name: `${order.cook.firstName} ${order.cook.lastName}`,
+    // profilePicture: order.cook.profilePicture
+  } : null,  
+  meals: order.meals.map(item => ({
+    id: item.meal?._id,
+    name: item.meal?.name,
+    price: item.meal?.price,
+    mainImage: item.meal?.mainImage,
+    quantity: item.quantity,
+    subtotal: item.meal ? (item.meal.price * item.quantity).toFixed(2) : 0
+  })),
+  deliveryAddress: order.deliveryAddress
+}));
+
+  return formattedOrders;
 };
 
 const getOrderByCookId = async (cookIdObject) => {

@@ -8,6 +8,11 @@ const addressSchema = new mongoose.Schema({
 }, { _id: false }); 
 
 const orderSchema = new mongoose.Schema({
+   cook: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
   customer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
