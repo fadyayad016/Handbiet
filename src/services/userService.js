@@ -287,7 +287,15 @@ const changeMainAddress = async (userId, addressId) => {
     (addr) => addr._id.toString() === addressId
   );
   if (!address) throw new Error("Address not found");
+
+  user.addresses = user.addresses.map((addr) => {
+    if (addr._id.toString() === addressId) {
+      return { ...addr._doc, isMain: true };
+    }
+    return { ...addr._doc, isMain: false };
+  });
   user.mainAddress = address;
+
   await user.save();
   return {
     message: "Main address changed successfully",

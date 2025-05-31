@@ -7,6 +7,7 @@ const addressSchema = new mongoose.Schema(
     state: String,
     zipCode: String,
     phone: String,
+    isMain: { type: Boolean, default: false },
   },
   { _id: true }
 );
