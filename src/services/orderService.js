@@ -115,11 +115,11 @@ const getOrderByCookId = async (cookIdObject) => {
   const orders = await Order.find({
     "meals.meal": { $exists: true }, //  to ensure meal exists
   })
-    .populate("customer", "firstName lastName")
+    .populate("customer", "firstName lastName email profilePicture")
     .populate({
       path: "meals.meal",
       match: { cook: cookId },
-      select: "_id cook",
+      select: "_id cook name price images",
     });
 
   const filteredOrders = orders.filter((order) =>
@@ -132,13 +132,24 @@ const getOrderByCookId = async (cookIdObject) => {
       _id: order.customer?._id,
       firstName: order.customer?.firstName || "",
       lastName: order.customer?.lastName || "",
+      email: order.customer?.email || "",
+      profilePicture:
+        order.customer?.profilePicture || " https://via.placeholder.com/150",
     },
     meals: order.meals
       .filter((item) => item.meal !== null)
       .map((item) => ({
+        name: item.meal.name,
         meal: item.meal._id,
         quantity: item.quantity,
+        price: item.meal.price,
         _id: item._id,
+        images: item.meal.images.map((image) => {
+          return {
+            url: image.url,
+            isMain: image.isMain,
+          };
+        }),
       })),
     status: order.status,
     deliveryAddress: order.deliveryAddress,
