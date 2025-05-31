@@ -3,9 +3,6 @@ const Meal = require('../models/Meal');
 const mongoose = require('mongoose');
 
 
-
-
-
 const createOrder = async (user, data) => {
   const { meals, deliveryAddress } = data;
 
@@ -76,7 +73,7 @@ const createOrder = async (user, data) => {
 
 const getOrders = async (user) => {
   const orders = await Order.find({ customer: user.id })
-    .sort({ createdAt: -1 }) 
+    .sort({ createdAt: -1 })
     .populate({
       path: 'meals.meal',
       select: 'name price mainImage'
@@ -85,27 +82,27 @@ const getOrders = async (user) => {
       path: 'cook',
       select: 'firstName lastName profilePicture'
     });
-    
+
   const formattedOrders = orders.map(order => ({
-  id: order._id,
-  status: order.status,
-  totalPrice: order.totalPrice,
-  createdAt: order.createdAt,
-  cook: order.cook ? {
-    id: order.cook._id,
-    name: `${order.cook.firstName} ${order.cook.lastName}`,
-    // profilePicture: order.cook.profilePicture
-  } : null,  
-  meals: order.meals.map(item => ({
-    id: item.meal?._id,
-    name: item.meal?.name,
-    price: item.meal?.price,
-    mainImage: item.meal?.mainImage,
-    quantity: item.quantity,
-    subtotal: item.meal ? (item.meal.price * item.quantity).toFixed(2) : 0
-  })),
-  deliveryAddress: order.deliveryAddress
-}));
+    id: order._id,
+    status: order.status,
+    totalPrice: order.totalPrice,
+    createdAt: order.createdAt,
+    cook: order.cook ? {
+      id: order.cook._id,
+      name: `${order.cook.firstName} ${order.cook.lastName}`,
+      // profilePicture: order.cook.profilePicture
+    } : null,
+    meals: order.meals.map(item => ({
+      id: item.meal?._id,
+      name: item.meal?.name,
+      price: item.meal?.price,
+      mainImage: item.meal?.mainImage,
+      quantity: item.quantity,
+      subtotal: item.meal ? (item.meal.price * item.quantity).toFixed(2) : 0
+    })),
+    deliveryAddress: order.deliveryAddress
+  }));
 
   return formattedOrders;
 };
@@ -119,7 +116,7 @@ const getOrderByCookId = async (cookIdObject) => {
     .populate('customer', 'firstName lastName')
     .populate({
       path: 'meals.meal',
-      match: { cook: cookId }, 
+      match: { cook: cookId },
       select: '_id cook'
     });
 
@@ -136,7 +133,7 @@ const getOrderByCookId = async (cookIdObject) => {
       lastName: order.customer?.lastName || ''
     },
     meals: order.meals
-      .filter(item => item.meal !== null) 
+      .filter(item => item.meal !== null)
       .map(item => ({
         meal: item.meal._id,
         quantity: item.quantity,
@@ -155,6 +152,6 @@ const getOrderByCookId = async (cookIdObject) => {
 
 
 
-module.exports = { createOrder, getOrders, getOrderByCookId};
+module.exports = { createOrder, getOrders, getOrderByCookId };
 
 
