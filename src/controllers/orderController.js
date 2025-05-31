@@ -17,6 +17,17 @@ exports.createOrder = asyncHandler(async (req, res) => {
 });
 
 
+exports.payment = asyncHandler(async (req, res) => {
+
+    const payment= await orderService.createPaymentIntentForOrders(req.user, req.body);
+
+    res.status(201).json({
+        message: 'payment intenent successfully',
+        paymentDetailes: payment,
+    });
+
+});
+
 
 exports.getOrderByCookId = asyncHandler(async (req, res) => {
     const orders = await orderService.getOrderByCookId(req.user);

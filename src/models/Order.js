@@ -33,7 +33,11 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
   totalPrice: Number,
-  deliveryAddress: addressSchema
+  deliveryAddress: addressSchema,
+  paymentId: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment',
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

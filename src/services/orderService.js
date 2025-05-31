@@ -1,3 +1,6 @@
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); 
+const Payment = require('../models/Payment'); 
+
 const Order = require('../models/Order');
 const Meal = require('../models/Meal');
 const mongoose = require('mongoose');
@@ -10,14 +13,11 @@ const createOrder = async (user, data) => {
     throw new Error("Invalid order data");
   }
 
-  // Fetch meal details to get their cooks
   const mealDocs = await Meal.find({ _id: { $in: meals.map(m => m.mealId) } });
 
-  // Map meals to include cookId and quantity
   const mealsWithCook = meals.map(item => {
     const mealDoc = mealDocs.find(m => m._id.toString() === item.mealId);
     if (!mealDoc) throw new Error(`Meal not found: ${item.mealId}`);
-
     return {
       mealId: item.mealId,
       quantity: item.quantity,
@@ -26,7 +26,6 @@ const createOrder = async (user, data) => {
     };
   });
 
-  // Group meals by cook
   const mealsByCook = {};
   for (const item of mealsWithCook) {
     if (!mealsByCook[item.cookId]) {
@@ -36,40 +35,82 @@ const createOrder = async (user, data) => {
   }
 
   const createdOrders = [];
+  let grandTotalPrice = 0;
 
-  // Create one order per cook
   for (const [cookId, items] of Object.entries(mealsByCook)) {
     const orderItems = items.map(i => ({
       meal: new mongoose.Types.ObjectId(i.mealId),
       quantity: i.quantity
     }));
 
-    const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
+    const totalPriceForThisOrder = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    grandTotalPrice += totalPriceForThisOrder; 
     const newOrder = new Order({
       customer: user.id,
       cook: cookId,
       meals: orderItems,
       deliveryAddress,
-      totalPrice,
+      totalPrice: totalPriceForThisOrder,
       status: 'pending',
     });
 
     await newOrder.save();
 
-    // Update meal sales count
     for (const item of items) {
       await Meal.findByIdAndUpdate(item.mealId, {
         $inc: { salesCount: item.quantity }
       });
     }
-
     createdOrders.push(newOrder);
   }
 
-  return createdOrders;
+  return { createdOrders, grandTotalPrice }; 
 };
 
+const createPaymentIntentForOrders = async (userId, orderDetails) => {
+  const { createdOrders, grandTotalPrice } = orderDetails;
+
+  if (!createdOrders || createdOrders.length === 0 || grandTotalPrice <= 0) {
+    throw new Error("No orders or invalid total amount for payment.");
+  }
+
+  const orderIds = createdOrders.map(order => order._id);
+
+ 
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round(grandTotalPrice * 100), 
+    currency: 'egp',
+    metadata: {
+      userId: userId.toString(),
+      order_ids: JSON.stringify(orderIds), 
+    },
+  
+  });
+
+  const newPaymentRecord = new Payment({
+    orderIds: orderIds,
+    customer: userId.id,
+    stripePaymentIntentId: paymentIntent.id,
+    amount: grandTotalPrice,
+    currency: paymentIntent.currency,
+    status: 'pending', 
+  });
+  await newPaymentRecord.save();
+
+  await Order.updateMany(
+    { _id: { $in: orderIds } },
+    { $set: { paymentId: newPaymentRecord._id } }
+  );
+
+  return {
+    clientSecret: paymentIntent.client_secret, 
+    paymentId: newPaymentRecord._id, 
+    totalAmount: grandTotalPrice,
+    currency: paymentIntent.currency
+  };
+};
+
+//
 
 const getOrders = async (user) => {
   const orders = await Order.find({ customer: user.id })
@@ -152,6 +193,6 @@ const getOrderByCookId = async (cookIdObject) => {
 
 
 
-module.exports = { createOrder, getOrders, getOrderByCookId };
+module.exports = { createOrder, getOrders, getOrderByCookId ,createPaymentIntentForOrders};
 
 

@@ -14,7 +14,7 @@ router.get('/', authMiddleware,ensureCustomerRole, orderController.getOrders);
 
 router.get('/cook', authMiddleware, ensureCookRole, orderController.getOrderByCookId);
 
-
+router.post('/payment', authMiddleware, ensureCustomerRole, orderController.payment);
 module.exports = router;
 
 
