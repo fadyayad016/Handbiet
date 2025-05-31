@@ -3,7 +3,12 @@ const User = require("../models/userAuth");
 const mongoose = require("mongoose");
 
 const createMeal = async (cookId, data) => {
-  const meal = new Meal({ ...data, cook: cookId, mainImage: data.mainImage, additionalImages: data.additionalImages || [] });
+  const meal = new Meal({
+    ...data,
+    cook: cookId,
+    mainImage: data.mainImage,
+    images: data.images || [],
+  });
   await meal.save();
   return meal;
 };
@@ -109,8 +114,6 @@ const removeFavoriteMeal = async (customerId, mealId) => {
   };
 };
 
-
-
 const getFavoriteMeals = async (customerId) => {
   const customer = await User.findById(customerId).lean();
   if (
@@ -137,18 +140,15 @@ const getBestSellerMeal = async () => {
 const getRandomMeal = async (takeNumber = 1) => {
   const totalMeals = await Meal.countDocuments();
   if (totalMeals === 0) {
-    throw new Error('No meals found');
+    throw new Error("No meals found");
   }
 
   const limit = Math.min(takeNumber, totalMeals);
 
-  const randomMeals = await Meal.aggregate([
-    { $sample: { size: limit } }
-  ]);
+  const randomMeals = await Meal.aggregate([{ $sample: { size: limit } }]);
 
   return randomMeals;
 };
-  
 
 module.exports = {
   createMeal,
@@ -161,5 +161,5 @@ module.exports = {
   getMealById,
   getFavoriteMeals,
   getBestSellerMeal,
-  getRandomMeal
+  getRandomMeal,
 };

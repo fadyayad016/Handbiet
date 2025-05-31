@@ -10,22 +10,33 @@ const mealSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: String,
     price: { type: Number, required: true },
-    cuisineType: String,
     ingredients: [String],
+    time: {
+      timeCook: { type: String },
+      timePrep: { type: String },
+    },
+    addtion: String,
+    typeOfMeal: String,
     availability: {
       days: [String],
       availableUntil: Date,
     },
-    mainImage: { type: String }, 
-    additionalImages: [String],  
+    active: { type: Boolean, default: true },
+    images: [
+      {
+        url: String,
+        isMain: { type: Boolean, default: false },
+      },
+    ],
+    cuisineType: String,
+    mainImage: { type: String },
     rating: { type: Number, default: 0.0, min: 0, max: 5.0 },
-    salesCount: { type: Number, default: 0 },
+    salesCount: { type: Number, default: 0.0 },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending'
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
-
   },
   { timestamps: true }
 );
