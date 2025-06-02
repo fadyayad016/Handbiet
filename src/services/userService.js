@@ -16,7 +16,7 @@ const getCurrentUser = async (userId) => {
     profilePicture: user.profilePicture,
     role: user.role,
     address: user.address,
-    cookProfile: user.role,
+    cookProfile: user.cookProfile,
     customerProfile: user.role,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
