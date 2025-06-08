@@ -16,6 +16,9 @@ router.get('/cook', authMiddleware, ensureCookRole, orderController.getOrderByCo
 
 router.post('/payment', authMiddleware, ensureCustomerRole, orderController.payment);
 router.put('/updatestatus', authMiddleware, ensureCookRole, orderController.updateOrderStatus);
+router.get('/notifications', authMiddleware, orderController.getAllNotifications);  
+router.put('/notifications/read', authMiddleware, orderController.updateNotificationReadStatus);
+router.put('/notifications/mark-all-as-read', authMiddleware, orderController.markAllNotificationsAsRead);
 module.exports = router;
 
 

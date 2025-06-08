@@ -60,3 +60,34 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
         order: updatedOrder,
     });
 })
+
+exports.getAllNotifications = asyncHandler(async (req, res) => {
+    
+
+    const notifications = await orderService.getAllNotifications(req.user);
+
+    res.status(200).json({
+        message: 'Notifications fetched successfully',
+        notifications,  
+    });
+})
+
+exports.updateNotificationReadStatus = asyncHandler(async (req, res) => {
+    
+    const updatedNotification = await orderService.updateNotificationReadStatus(req.user, req.body);
+
+    res.status(200).json({
+        message: 'Notification marked as read successfully',
+        notification: updatedNotification,
+    });
+});
+
+
+exports.markAllNotificationsAsRead = asyncHandler(async (req, res) => {
+    
+    const result = await orderService.markAllNotificationsAsRead(req.user);
+
+    res.status(200).json({
+        message: result.message,
+    });
+});

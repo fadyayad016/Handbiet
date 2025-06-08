@@ -1,5 +1,7 @@
 const express = require("express");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
+
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const cors = require("./middlewares/cors.js");
@@ -16,22 +18,35 @@ const io = socketIo(server, {
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
-// Map  socket for every user
 const connectedUsers = new Map();
 
-io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
+// ✅ Middleware: Verify token and attach userId
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
 
-  socket.on("register", (userId) => {
-    console.log(`User ${userId} registered with socket ${socket.id}`);
-    connectedUsers.set(userId, socket.id);
-  });
+  if (!token) return next(new Error("Authentication token is missing"));
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.id;
+    next();
+  } catch (err) {
+    next(new Error("Invalid token"));
+  }
+});
+
+//  On connection
+io.on("connection", (socket) => {
+  const userId = socket.userId;
+  console.log("🟢 Socket connected:", socket.id, "User:", userId);
+
+  connectedUsers.set(userId, socket.id);
 
   socket.on("disconnect", () => {
     console.log("🔴 Socket disconnected:", socket.id);
-    for (const [userId, socketId] of connectedUsers.entries()) {
-      if (socketId === socket.id) {
-        connectedUsers.delete(userId);
+    for (const [uid, sid] of connectedUsers.entries()) {
+      if (sid === socket.id) {
+        connectedUsers.delete(uid);
         break;
       }
     }
@@ -79,9 +94,11 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+
+server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
+
 
 process.on("SIGINT", async () => {
   console.log("\n🛑 Gracefully shutting down...");

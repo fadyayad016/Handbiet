@@ -1,6 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Payment = require("../models/Payment");
-const Notification = require('../models/Notification'); 
+const Notification = require('../models/Notification');
 const Order = require("../models/Order");
 const Meal = require("../models/Meal");
 const mongoose = require("mongoose");
@@ -65,11 +65,30 @@ const createOrder = async (user, data) => {
         $inc: { salesCount: item.quantity },
       });
     }
+    const customerName = `${user.firstName} ${user.lastName}`;
+    const notificationMessage = `You have received a new order from ${customerName}.`;
+
     await Notification.create({
-    user: cookId,
-    order: newOrder._id,
-    message: `You have received a new order from ${user.name}.`,
-  });
+      user: cookId,
+      order: newOrder._id,
+      message: notificationMessage,
+    });
+    const io = require('../index').app.get('io');
+    const connectedUsers = require('../index').app.get('connectedUsers');
+
+    const cookSocketId = connectedUsers.get(cookId.toString());
+    if (cookSocketId) {
+      io.to(cookSocketId).emit('newOrderNotification', { // This is the event name
+        message: notificationMessage,
+        orderId: newOrder._id,
+        status: newOrder.status,
+        customerName: customerName,
+        totalPrice: newOrder.totalPrice,
+      });
+      console.log(`New order notification sent to cook ${cookId} via Socket.IO`);
+    } else {
+      console.log(`Cook ${cookId} is not currently connected via Socket.IO.`);
+    }
     createdOrders.push(newOrder);
   }
 
@@ -138,10 +157,10 @@ const getOrders = async (user) => {
     createdAt: order.createdAt,
     cook: order.cook
       ? {
-          id: order.cook._id,
-          name: `${order.cook.firstName} ${order.cook.lastName}`,
-          // profilePicture: order.cook.profilePicture
-        }
+        id: order.cook._id,
+        name: `${order.cook.firstName} ${order.cook.lastName}`,
+        // profilePicture: order.cook.profilePicture
+      }
       : null,
     meals: order.meals.map((item) => ({
       id: item.meal?._id,
@@ -209,7 +228,9 @@ const getOrderByCookId = async (cookIdObject) => {
 
 const updateOrderStatus = async (user, body) => {
   const { orderId, action } = body;
-  const cookId = user.id; 
+  const cookId = new mongoose.Types.ObjectId(user.id);
+  const cookName = `${user.firstName} ${user.lastName}`;
+
   const order = await Order.findOne({ _id: orderId, cook: cookId });
   if (!order) throw new Error('Order not found or unauthorized');
 
@@ -222,7 +243,7 @@ const updateOrderStatus = async (user, body) => {
   } else if (action === 'cancel') {
     order.status = 'cancelled';
   } else if (action === 'complete') {
-    order.status = 'completed'; 
+    order.status = 'completed';
   }
   else {
     throw new Error('Invalid action');
@@ -230,7 +251,7 @@ const updateOrderStatus = async (user, body) => {
 
   await order.save();
 
-  const message = `Your order was ${order.status} by the cook.`;
+  const message = `Your order was ${order.status} by ${cookName}.`;
 
   await Notification.create({
     user: order.customer,
@@ -238,22 +259,71 @@ const updateOrderStatus = async (user, body) => {
     message,
   });
 
-  // 🔌 إرسال الإشعار عبر socket.io
+  // Send real-time notification via Socket.IO
   const io = require('../index').app.get('io');
   const connectedUsers = require('../index').app.get('connectedUsers');
 
-  const socketId = connectedUsers.get(order.customer.toString());
-  if (socketId) {
-    io.to(socketId).emit('notification', {
+  const customerSocketId = connectedUsers.get(order.customer.toString());
+  if (customerSocketId) {
+    io.to(customerSocketId).emit('orderStatusUpdate', { //  event name
       message,
       orderId: order._id,
       status: order.status,
+      cookName: cookName
     });
+    console.log(`Order status update sent to customer ${order.customer} via Socket.IO`);
+  } else {
+    console.log(`Customer ${order.customer} is not currently connected via Socket.IO.`);
   }
 
   return order;
 };
 
+
+const getAllNotifications = async (userId) => {
+  const UserId = new mongoose.Types.ObjectId(userId); 
+  
+  const notifications = await Notification.find({ user: UserId }).sort({ createdAt: -1 }).populate('user', 'firstName lastName'); 
+
+  return notifications;
+};
+
+
+const updateNotificationReadStatus = async (user, body) => {
+
+      const userIdString = user.id; 
+    const notificationIdString = body.notificationId;
+
+    const objectIdUserId = new mongoose.Types.ObjectId(userIdString);         
+    const objectIdNotificationId = new mongoose.Types.ObjectId(notificationIdString); 
+
+    // Find the notification and ensure it belongs to the authenticated user
+    const notification = await Notification.findOneAndUpdate(
+        { _id: objectIdNotificationId, user: objectIdUserId },
+        { isRead: true },
+        { new: true } // Returns the updated document
+    );
+
+    if (!notification) {
+        const error = new Error('Notification not found or unauthorized.');
+        error.status = 404; 
+        throw error;
+    }
+
+    return notification; 
+};
+
+
+// mark ALL notifications for a user as read
+const markAllNotificationsAsRead = async (userId) => {
+    const objectIdUserId = new mongoose.Types.ObjectId(userId);
+
+    await Notification.updateMany(
+        { user: objectIdUserId, isRead: false }, // Use the converted ObjectId
+        { isRead: true }
+    );
+    return { message: 'All notifications marked as read.' };
+};
 
 
 
@@ -263,4 +333,7 @@ module.exports = {
   getOrderByCookId,
   createPaymentIntentForOrders,
   updateOrderStatus,
+  getAllNotifications,
+  markAllNotificationsAsRead,
+  updateNotificationReadStatus
 };
