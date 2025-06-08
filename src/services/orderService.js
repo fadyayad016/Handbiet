@@ -1,6 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Payment = require("../models/Payment");
-
+const Notification = require('../models/Notification'); 
 const Order = require("../models/Order");
 const Meal = require("../models/Meal");
 const mongoose = require("mongoose");
@@ -65,6 +65,11 @@ const createOrder = async (user, data) => {
         $inc: { salesCount: item.quantity },
       });
     }
+    await Notification.create({
+    user: cookId,
+    order: newOrder._id,
+    message: `You have received a new order from ${user.name}.`,
+  });
     createdOrders.push(newOrder);
   }
 
@@ -199,9 +204,63 @@ const getOrderByCookId = async (cookIdObject) => {
   return result;
 };
 
+
+
+
+const updateOrderStatus = async (user, body) => {
+  const { orderId, action } = body;
+  const cookId = user.id; 
+  const order = await Order.findOne({ _id: orderId, cook: cookId });
+  if (!order) throw new Error('Order not found or unauthorized');
+
+  if (order.status !== 'pending') {
+    throw new Error('Order has already been processed');
+  }
+
+  if (action === 'accept') {
+    order.status = 'accepted';
+  } else if (action === 'cancel') {
+    order.status = 'cancelled';
+  } else if (action === 'complete') {
+    order.status = 'completed'; 
+  }
+  else {
+    throw new Error('Invalid action');
+  }
+
+  await order.save();
+
+  const message = `Your order was ${order.status} by the cook.`;
+
+  await Notification.create({
+    user: order.customer,
+    order: order._id,
+    message,
+  });
+
+  // 🔌 إرسال الإشعار عبر socket.io
+  const io = require('../index').app.get('io');
+  const connectedUsers = require('../index').app.get('connectedUsers');
+
+  const socketId = connectedUsers.get(order.customer.toString());
+  if (socketId) {
+    io.to(socketId).emit('notification', {
+      message,
+      orderId: order._id,
+      status: order.status,
+    });
+  }
+
+  return order;
+};
+
+
+
+
 module.exports = {
   createOrder,
   getOrders,
   getOrderByCookId,
   createPaymentIntentForOrders,
+  updateOrderStatus,
 };

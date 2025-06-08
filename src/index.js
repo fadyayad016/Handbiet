@@ -5,7 +5,41 @@ const morgan = require("morgan");
 const cors = require("./middlewares/cors.js");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const http = require("http");
+const server = http.createServer(app);
+
+// Socket.io setup 
+const socketIo = require("socket.io");
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+});
+// Map  socket for every user
+const connectedUsers = new Map();
+
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connected:", socket.id);
+
+  socket.on("register", (userId) => {
+    console.log(`User ${userId} registered with socket ${socket.id}`);
+    connectedUsers.set(userId, socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Socket disconnected:", socket.id);
+    for (const [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+        break;
+      }
+    }
+  });
+});
+
+app.set("io", io);
+app.set("connectedUsers", connectedUsers);
 
 // DB connection
 const dbconnect = require("../src/config/DbConnect.js");
@@ -44,6 +78,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
@@ -53,3 +88,4 @@ process.on("SIGINT", async () => {
   await mongoose.disconnect();
   process.exit(0);
 });
+module.exports = { app };

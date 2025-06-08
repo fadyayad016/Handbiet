@@ -130,10 +130,10 @@ const getFavoriteMeals = async (customerId) => {
   }).populate("cook", "firstName lastName profilePicture");
 };
 const getBestSellerMeal = async () => {
-  const bestmeal = await Meal.findOne()
+  const bestmeal = await Meal.find()
     .sort({ salesCount: -1 })
     .populate("cook", "firstName lastName profilePicture")
-    .limit(1);
+    .limit(5);
   return bestmeal;
 };
 

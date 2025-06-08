@@ -48,3 +48,15 @@ exports.getOrders = asyncHandler(async (req, res) => {
     });
 
 });
+
+
+
+exports.updateOrderStatus = asyncHandler(async (req, res) => {
+
+    const updatedOrder = await orderService.updateOrderStatus(req.user, req.body);
+
+    res.status(200).json({
+        message: `Order status updated to ${updatedOrder.status}`,
+        order: updatedOrder,
+    });
+})
