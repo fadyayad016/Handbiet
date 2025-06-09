@@ -1,6 +1,7 @@
 const express = require('express');
 const ensureCustomerRole = require('../middlewares/ensureCustomerRole');
 const ensureCookRole = require('../middlewares/ensureCookRole');
+const ensureAdminRole = require('../middlewares/ensureAdminRole');
 
 const router = express.Router();
 
@@ -8,9 +9,11 @@ const adminDashboardController = require('../controllers/adminDashboard');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 
-
-
-
-
-
+router.get('/Users', authMiddleware,ensureAdminRole, adminDashboardController.getAllUsers); 
+router.get('/ordersState', authMiddleware, ensureAdminRole, adminDashboardController.orderstates);
+router.get('/totalRevenue', authMiddleware, ensureAdminRole, adminDashboardController.totalrevenue);   
+router.get('/averageOrderValue', authMiddleware, ensureAdminRole, adminDashboardController.averageOrderValue); 
+router.get('/monthlyRevenue', authMiddleware, ensureAdminRole, adminDashboardController.MonthlyRevenue);
+router.get('/userGrowth', authMiddleware, ensureAdminRole, adminDashboardController.UserGrowth);
+router.get('/getAllOrdersForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getAllOrders);  
 module.exports = router;
