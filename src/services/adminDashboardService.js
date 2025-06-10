@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const User = require("../models/userAuth");
 const Order = require('../models/Order');
-
+const CookProfile = require("../models/CookProfile"); 
+const CustomerProfile = require("../models/CustomerProfile");
 
 
 
@@ -366,26 +367,153 @@ const getUserGrowth = async (months = 6) => { // months: Number of months to loo
 };
 
 const getAllOrdersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1) => {
-        const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-        // Count total orders for pagination info
-        const totalOrders = await Order.countDocuments();
-        const orders = await Order.find({})
-            .populate('customer', 'firstName lastName email') // Get customer's name and email
-            .populate('cook', 'firstName lastName email')     // Get cook's name and email
-            .sort({ [sortBy]: sortOrder }) // Sort by the specified field and order (-1 for descending, 1 for ascending)
-            .skip(skip) // Skip documents for pagination
-            .limit(limit); // Limit the number of documents per page
+  // Count total orders for pagination info
+  const totalOrders = await Order.countDocuments();
+  const orders = await Order.find({})
+    .populate('customer', 'firstName lastName email') // Get customer's name and email
+    .populate('cook', 'firstName lastName email')     // Get cook's name and email
+    .sort({ [sortBy]: sortOrder }) // Sort by the specified field and order (-1 for descending, 1 for ascending)
+    .skip(skip) // Skip documents for pagination
+    .limit(limit); // Limit the number of documents per page
 
-        return {
-            orders,
-            totalOrders,
-            currentPage: page,
-            totalPages: Math.ceil(totalOrders / limit), // Calculate total pages
-            limit,
-        };
-   
+  return {
+    orders,
+    totalOrders,
+    currentPage: page,
+    totalPages: Math.ceil(totalOrders / limit), // Calculate total pages
+    limit,
+  };
+
 };
+const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1, role = null, searchkeyword = null, userStatus = null) => {
+  const skip = (page - 1) * limit;
+
+  let query = {};
+
+  if (role) {
+    if (["customer", "cook", "admin"].includes(role)) {
+      query.role = role;
+    } else {
+      console.warn(`Invalid role provided: ${role}. Filtering by role will be ignored.`);
+    }
+  }
+
+  if (userStatus && ["active", "suspended", "inactive"].includes(userStatus)) {
+    query.status = userStatus;
+  }
+
+  if (searchkeyword) {
+    const searchRegex = new RegExp(searchkeyword, 'i');
+    query.$or = [
+      { firstName: { $regex: searchRegex } },
+      { lastName: { $regex: searchRegex } },
+      { email: { $regex: searchRegex } },
+    ];
+  }
+
+  const sortOptions = {};
+  if (sortBy === 'lastLogin') {
+    sortOptions.updatedAt = sortOrder;
+  } else if (sortBy) {
+    sortOptions[sortBy] = sortOrder;
+  } else {
+    sortOptions.createdAt = -1;
+  }
+
+  const users = await User.find(query)
+    .select('-password')
+    .skip(skip)
+    .limit(limit)
+    .sort(sortOptions)
+    .lean();
+  const usersWithOrderCount = await Promise.all(users.map(async (user) => {
+    // Count orders where the user is either the customer or the cook
+    const orderCount = await Order.countDocuments({
+      $or: [
+        { customer: user._id },
+        { cook: user._id }
+      ]
+    });
+    // Return the user object with the new orderCount property
+    return { ...user, orderCount };
+  }));
+
+  const total = await User.countDocuments(query);
+
+  return {
+    users: usersWithOrderCount,
+
+    total: total,
+    page: page,
+    limit: limit,
+    totalPages: Math.ceil(total / limit),
+  };
+
+};
+
+
+
+const updateUserForAdmin = async (userId, data) => {
+  if (data.password) {
+    delete data.password;
+    console.warn("Attempted to update password directly via admin update. Ignoring password field.");
+  }
+  if (data.refreshToken) {
+    delete data.refreshToken;
+    console.warn("Attempted to update refresh token directly via admin update. Ignoring refresh token field.");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { $set: data },
+    { new: true, runValidators: true }
+  ).select('-password, -refreshToken');
+
+  if (!updatedUser) {
+    throw new Error(`User with ID ${userId} not found.`);
+  }
+
+  return updatedUser;
+
+
+};
+
+const deleteUserForAdmin = async (userId) => {
+  const session = await User.startSession();
+  session.startTransaction();
+
+  const deletedUser = await User.findByIdAndDelete(userId, { session });
+
+  if (!deletedUser) {
+    throw new Error(`User with ID ${userId} not found.`);
+  }
+
+  // Clean up associated profiles (CookProfile, CustomerProfile)
+  if (deletedUser.role === 'cook' && deletedUser.cookProfile) {
+    await CookProfile.findByIdAndDelete(deletedUser.cookProfile, { session });
+  }
+  if (deletedUser.role === 'customer' && deletedUser.customerProfile) {
+    await CustomerProfile.findByIdAndDelete(deletedUser.customerProfile, { session });
+  }
+
+
+  await Order.deleteMany({
+    $or: [{ customer: userId }, { cook: userId }]
+  }, { session });
+  console.log(` Deleted all orders associated with user ${userId}.`);
+
+
+
+  await session.commitTransaction();
+  session.endSession();
+
+  return deletedUser;
+
+}
+
+
 
 
 module.exports = {
@@ -395,5 +523,8 @@ module.exports = {
   getAverageOrderValue,
   getMonthlyRevenue,
   getUserGrowth,
-  getAllOrdersForAdmin
+  getAllOrdersForAdmin,
+  getAllUsersForAdmin,
+  updateUserForAdmin,
+  deleteUserForAdmin
 }

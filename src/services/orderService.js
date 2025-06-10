@@ -234,7 +234,7 @@ const updateOrderStatus = async (user, body) => {
   const order = await Order.findOne({ _id: orderId, cook: cookId });
   if (!order) throw new Error('Order not found or unauthorized');
 
-  if (order.status !== 'pending') {
+  if (order.status !== 'pending'&& order.status !== 'accepted') {
     throw new Error('Order has already been processed');
   }
 

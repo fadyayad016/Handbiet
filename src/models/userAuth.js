@@ -17,6 +17,13 @@ const userSchema = new mongoose.Schema(
 
     cookProfile: cookProfileSchema,
     customerProfile: customerProfileSchema,
+     status: {
+      type: String,
+      enum: ["active", "suspended", "inactive"],
+      default: "active",
+     required: true, 
+    },
+
   },
   { timestamps: true }
 );
