@@ -45,6 +45,11 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
     },
+    orderCode: {
+      type: String,
+      unique: true,
+
+    }
   },
   { timestamps: true }
 );

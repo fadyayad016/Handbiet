@@ -16,4 +16,10 @@ router.get('/averageOrderValue', authMiddleware, ensureAdminRole, adminDashboard
 router.get('/monthlyRevenue', authMiddleware, ensureAdminRole, adminDashboardController.MonthlyRevenue);
 router.get('/userGrowth', authMiddleware, ensureAdminRole, adminDashboardController.UserGrowth);
 router.get('/getAllOrdersForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getAllOrders);  
+router.get('/getAllUsersForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getAllUsersForAdmin);
+router.put('/updateUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.updateUserForAdmin);
+router.delete('/deleteUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.deleteUserForAdmin);
+router.get('/ordermonitoring', authMiddleware, ensureAdminRole, adminDashboardController.ordermonitoring);
+router.get('/getAdminOrderById/:id', authMiddleware, ensureAdminRole, adminDashboardController.getAdminOrderById);
+
 module.exports = router;

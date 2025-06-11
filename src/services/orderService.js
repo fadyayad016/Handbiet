@@ -9,7 +9,9 @@ const createOrder = async (user, data) => {
   const { meals, deliveryAddress } = data;
 
   if (!meals?.length || !deliveryAddress) {
-    throw new Error("Invalid order data");
+    throw new Error(
+      "Invalid order data: Missing meals, delivery address, or delivery method."
+    );
   }
 
   const mealDocs = await Meal.find({
@@ -49,6 +51,11 @@ const createOrder = async (user, data) => {
       0
     );
     grandTotalPrice += totalPriceForThisOrder;
+    //Generate a unique orderCode
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+    const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+    const orderCode = `HB-${datePart}-${randomPart}`; // Example: HB-20250611-1234
+
     const newOrder = new Order({
       customer: user.id,
       cook: cookId,
@@ -56,6 +63,7 @@ const createOrder = async (user, data) => {
       deliveryAddress,
       totalPrice: totalPriceForThisOrder,
       status: "pending",
+      orderCode: orderCode,
     });
 
     await newOrder.save();
@@ -85,6 +93,7 @@ const createOrder = async (user, data) => {
         status: newOrder.status,
         customerName: customerName,
         totalPrice: newOrder.totalPrice,
+        orderCode: newOrder.orderCode,
       });
       console.log(
         `New order notification sent to cook ${cookId} via Socket.IO`
