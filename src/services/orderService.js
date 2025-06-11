@@ -1,6 +1,6 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Payment = require("../models/Payment");
-const Notification = require('../models/Notification');
+const Notification = require("../models/Notification");
 const Order = require("../models/Order");
 const Meal = require("../models/Meal");
 const mongoose = require("mongoose");
@@ -73,19 +73,22 @@ const createOrder = async (user, data) => {
       order: newOrder._id,
       message: notificationMessage,
     });
-    const io = require('../index').app.get('io');
-    const connectedUsers = require('../index').app.get('connectedUsers');
+    const io = require("../index").app.get("io");
+    const connectedUsers = require("../index").app.get("connectedUsers");
 
     const cookSocketId = connectedUsers.get(cookId.toString());
     if (cookSocketId) {
-      io.to(cookSocketId).emit('newOrderNotification', { // This is the event name
+      io.to(cookSocketId).emit("newOrderNotification", {
+        // This is the event name
         message: notificationMessage,
         orderId: newOrder._id,
         status: newOrder.status,
         customerName: customerName,
         totalPrice: newOrder.totalPrice,
       });
-      console.log(`New order notification sent to cook ${cookId} via Socket.IO`);
+      console.log(
+        `New order notification sent to cook ${cookId} via Socket.IO`
+      );
     } else {
       console.log(`Cook ${cookId} is not currently connected via Socket.IO.`);
     }
@@ -157,10 +160,10 @@ const getOrders = async (user) => {
     createdAt: order.createdAt,
     cook: order.cook
       ? {
-        id: order.cook._id,
-        name: `${order.cook.firstName} ${order.cook.lastName}`,
-        // profilePicture: order.cook.profilePicture
-      }
+          id: order.cook._id,
+          name: `${order.cook.firstName} ${order.cook.lastName}`,
+          // profilePicture: order.cook.profilePicture
+        }
       : null,
     meals: order.meals.map((item) => ({
       id: item.meal?._id,
@@ -223,30 +226,26 @@ const getOrderByCookId = async (cookIdObject) => {
   return result;
 };
 
-
-
-
 const updateOrderStatus = async (user, body) => {
   const { orderId, action } = body;
   const cookId = new mongoose.Types.ObjectId(user.id);
   const cookName = `${user.firstName} ${user.lastName}`;
 
   const order = await Order.findOne({ _id: orderId, cook: cookId });
-  if (!order) throw new Error('Order not found or unauthorized');
+  if (!order) throw new Error("Order not found or unauthorized");
 
-  if (order.status !== 'pending') {
-    throw new Error('Order has already been processed');
+  if (order.status !== "pending" && order.status !== "accepted") {
+    throw new Error("Order has already been processed");
   }
 
-  if (action === 'accept') {
-    order.status = 'accepted';
-  } else if (action === 'cancel') {
-    order.status = 'cancelled';
-  } else if (action === 'complete') {
-    order.status = 'completed';
-  }
-  else {
-    throw new Error('Invalid action');
+  if (action === "accept") {
+    order.status = "accepted";
+  } else if (action === "cancel") {
+    order.status = "cancelled";
+  } else if (action === "complete") {
+    order.status = "completed";
+  } else {
+    throw new Error("Invalid action");
   }
 
   await order.save();
@@ -260,72 +259,113 @@ const updateOrderStatus = async (user, body) => {
   });
 
   // Send real-time notification via Socket.IO
-  const io = require('../index').app.get('io');
-  const connectedUsers = require('../index').app.get('connectedUsers');
+  const io = require("../index").app.get("io");
+  const connectedUsers = require("../index").app.get("connectedUsers");
 
   const customerSocketId = connectedUsers.get(order.customer.toString());
+  console.log(connectedUsers);
+  console.log(customerSocketId);
   if (customerSocketId) {
-    io.to(customerSocketId).emit('orderStatusUpdate', { //  event name
+    io.to(customerSocketId).emit("orderStatusUpdate", {
+      //  event name
       message,
       orderId: order._id,
       status: order.status,
-      cookName: cookName
+      cookName: cookName,
     });
-    console.log(`Order status update sent to customer ${order.customer} via Socket.IO`);
+    console.log(
+      `Order status update sent to customer ${order.customer} via Socket.IO`
+    );
   } else {
-    console.log(`Customer ${order.customer} is not currently connected via Socket.IO.`);
+    console.log(
+      `Customer ${order.customer} is not currently connected via Socket.IO.`
+    );
   }
 
   return order;
 };
 
-
 const getAllNotifications = async (userId) => {
-  const UserId = new mongoose.Types.ObjectId(userId); 
-  
-  const notifications = await Notification.find({ user: UserId }).sort({ createdAt: -1 }).populate('user', 'firstName lastName'); 
+  const UserId = new mongoose.Types.ObjectId(userId);
+
+  const notifications = await Notification.find({ user: UserId })
+    .sort({ createdAt: -1 })
+    .populate("user", "firstName lastName");
 
   return notifications;
 };
 
-
 const updateNotificationReadStatus = async (user, body) => {
+  const userIdString = user.id;
+  const notificationIdString = body.notificationId;
 
-      const userIdString = user.id; 
-    const notificationIdString = body.notificationId;
+  const objectIdUserId = new mongoose.Types.ObjectId(userIdString);
+  const objectIdNotificationId = new mongoose.Types.ObjectId(
+    notificationIdString
+  );
 
-    const objectIdUserId = new mongoose.Types.ObjectId(userIdString);         
-    const objectIdNotificationId = new mongoose.Types.ObjectId(notificationIdString); 
+  // Find the notification and ensure it belongs to the authenticated user
+  const notification = await Notification.findOneAndUpdate(
+    { _id: objectIdNotificationId, user: objectIdUserId },
+    { isRead: true },
+    { new: true } // Returns the updated document
+  );
 
-    // Find the notification and ensure it belongs to the authenticated user
-    const notification = await Notification.findOneAndUpdate(
-        { _id: objectIdNotificationId, user: objectIdUserId },
-        { isRead: true },
-        { new: true } // Returns the updated document
-    );
+  if (!notification) {
+    const error = new Error("Notification not found or unauthorized.");
+    error.status = 404;
+    throw error;
+  }
 
-    if (!notification) {
-        const error = new Error('Notification not found or unauthorized.');
-        error.status = 404; 
-        throw error;
-    }
-
-    return notification; 
+  return notification;
 };
-
 
 // mark ALL notifications for a user as read
 const markAllNotificationsAsRead = async (userId) => {
-    const objectIdUserId = new mongoose.Types.ObjectId(userId);
+  const objectIdUserId = new mongoose.Types.ObjectId(userId);
 
-    await Notification.updateMany(
-        { user: objectIdUserId, isRead: false }, // Use the converted ObjectId
-        { isRead: true }
-    );
-    return { message: 'All notifications marked as read.' };
+  await Notification.updateMany(
+    { user: objectIdUserId, isRead: false }, // Use the converted ObjectId
+    { isRead: true }
+  );
+  return { message: "All notifications marked as read." };
 };
 
-
+const getOrderByIdForCustomer = async (userId, orderId) => {
+  const order = await Order.findOne({ _id: orderId, customer: userId })
+    .populate({
+      path: "meals.meal",
+      select: "name price mainImage",
+    })
+    .populate({
+      path: "cook",
+      select: "firstName lastName profilePicture",
+    });
+  if (!order) return null;
+  const formattedOrder = {
+    id: order._id,
+    status: order.status,
+    totalPrice: order.totalPrice,
+    createdAt: order.createdAt,
+    cook: order.cook
+      ? {
+          id: order.cook._id,
+          name: `${order.cook.firstName} ${order.cook.lastName}`,
+          // profilePicture: order.cook.profilePicture
+        }
+      : null,
+    meals: order.meals.map((item) => ({
+      id: item.meal?._id,
+      name: item.meal?.name,
+      price: item.meal?.price,
+      mainImage: item.meal?.mainImage,
+      quantity: item.quantity,
+      subtotal: item.meal ? (item.meal.price * item.quantity).toFixed(2) : 0,
+    })),
+    deliveryAddress: order.deliveryAddress,
+  };
+  return formattedOrder;
+};
 
 module.exports = {
   createOrder,
@@ -335,5 +375,6 @@ module.exports = {
   updateOrderStatus,
   getAllNotifications,
   markAllNotificationsAsRead,
-  updateNotificationReadStatus
+  updateNotificationReadStatus,
+  getOrderByIdForCustomer,
 };

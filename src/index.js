@@ -10,7 +10,7 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 
-// Socket.io setup 
+// Socket.io setup
 const socketIo = require("socket.io");
 const io = socketIo(server, {
   cors: {
@@ -22,7 +22,8 @@ const connectedUsers = new Map();
 
 // ✅ Middleware: Verify token and attach userId
 io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+  // console.log(socket.handshake);
 
   if (!token) return next(new Error("Authentication token is missing"));
 
@@ -41,6 +42,7 @@ io.on("connection", (socket) => {
   console.log("🟢 Socket connected:", socket.id, "User:", userId);
 
   connectedUsers.set(userId, socket.id);
+  console.log(connectedUsers);
 
   socket.on("disconnect", () => {
     console.log("🔴 Socket disconnected:", socket.id);
@@ -98,7 +100,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
-
 
 process.on("SIGINT", async () => {
   console.log("\n🛑 Gracefully shutting down...");
