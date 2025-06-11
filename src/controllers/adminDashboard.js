@@ -125,3 +125,31 @@ exports.deleteUserForAdmin = asyncHandler(async (req, res) => {
     });
 });
 
+exports.ordermonitoring = asyncHandler(async (req, res) => {
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status; // e.g., 'pending', 'accepted', 'completed', 'cancelled'
+    const searchQuery = req.query.searchQuery; // For customer name, phone, or orderCode
+    const startDate = req.query.startDate; // For date range start (e.g., '2024-01-01')
+    const endDate = req.query.endDate;     // For date range end (e.g., '2024-12-31')
+
+    const orderData = await adminDashboardService.ordermonitoring(status, searchQuery, startDate, endDate, page, limit);
+    res.status(200).json({
+        message: 'All orders fetched successfully for order monitoring',
+        ...orderData,
+    });
+});
+
+
+exports.getAdminOrderById= asyncHandler(async (req, res) => {
+    const orderId = req.params.id; 
+    const order = await adminDashboardService.getAdminOrderById(orderId);
+
+  
+
+    res.status(200).json({
+        message: 'Order fetched successfully',
+        order,
+    });
+})

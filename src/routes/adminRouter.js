@@ -19,4 +19,7 @@ router.get('/getAllOrdersForAdmin', authMiddleware, ensureAdminRole, adminDashbo
 router.get('/getAllUsersForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getAllUsersForAdmin);
 router.put('/updateUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.updateUserForAdmin);
 router.delete('/deleteUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.deleteUserForAdmin);
+router.get('/ordermonitoring', authMiddleware, ensureAdminRole, adminDashboardController.ordermonitoring);
+router.get('/getAdminOrderById/:id', authMiddleware, ensureAdminRole, adminDashboardController.getAdminOrderById);
+
 module.exports = router;

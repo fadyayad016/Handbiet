@@ -8,9 +8,11 @@ const mongoose = require("mongoose");
 const createOrder = async (user, data) => {
   const { meals, deliveryAddress } = data;
 
+
   if (!meals?.length || !deliveryAddress) {
-    throw new Error("Invalid order data");
+    throw new Error("Invalid order data: Missing meals, delivery address, or delivery method.");
   }
+
 
   const mealDocs = await Meal.find({
     _id: { $in: meals.map((m) => m.mealId) },
@@ -49,6 +51,11 @@ const createOrder = async (user, data) => {
       0
     );
     grandTotalPrice += totalPriceForThisOrder;
+    //Generate a unique orderCode 
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+    const orderCode = `HB-${datePart}-${randomPart}`; // Example: HB-20250611-1234
+
     const newOrder = new Order({
       customer: user.id,
       cook: cookId,
@@ -56,6 +63,7 @@ const createOrder = async (user, data) => {
       deliveryAddress,
       totalPrice: totalPriceForThisOrder,
       status: "pending",
+      orderCode: orderCode,
     });
 
     await newOrder.save();
@@ -84,6 +92,8 @@ const createOrder = async (user, data) => {
         status: newOrder.status,
         customerName: customerName,
         totalPrice: newOrder.totalPrice,
+        orderCode: newOrder.orderCode,
+
       });
       console.log(`New order notification sent to cook ${cookId} via Socket.IO`);
     } else {
@@ -234,7 +244,7 @@ const updateOrderStatus = async (user, body) => {
   const order = await Order.findOne({ _id: orderId, cook: cookId });
   if (!order) throw new Error('Order not found or unauthorized');
 
-  if (order.status !== 'pending'&& order.status !== 'accepted') {
+  if (order.status !== 'pending' && order.status !== 'accepted') {
     throw new Error('Order has already been processed');
   }
 
@@ -281,9 +291,9 @@ const updateOrderStatus = async (user, body) => {
 
 
 const getAllNotifications = async (userId) => {
-  const UserId = new mongoose.Types.ObjectId(userId); 
-  
-  const notifications = await Notification.find({ user: UserId }).sort({ createdAt: -1 }).populate('user', 'firstName lastName'); 
+  const UserId = new mongoose.Types.ObjectId(userId);
+
+  const notifications = await Notification.find({ user: UserId }).sort({ createdAt: -1 }).populate('user', 'firstName lastName');
 
   return notifications;
 };
@@ -291,38 +301,38 @@ const getAllNotifications = async (userId) => {
 
 const updateNotificationReadStatus = async (user, body) => {
 
-      const userIdString = user.id; 
-    const notificationIdString = body.notificationId;
+  const userIdString = user.id;
+  const notificationIdString = body.notificationId;
 
-    const objectIdUserId = new mongoose.Types.ObjectId(userIdString);         
-    const objectIdNotificationId = new mongoose.Types.ObjectId(notificationIdString); 
+  const objectIdUserId = new mongoose.Types.ObjectId(userIdString);
+  const objectIdNotificationId = new mongoose.Types.ObjectId(notificationIdString);
 
-    // Find the notification and ensure it belongs to the authenticated user
-    const notification = await Notification.findOneAndUpdate(
-        { _id: objectIdNotificationId, user: objectIdUserId },
-        { isRead: true },
-        { new: true } // Returns the updated document
-    );
+  // Find the notification and ensure it belongs to the authenticated user
+  const notification = await Notification.findOneAndUpdate(
+    { _id: objectIdNotificationId, user: objectIdUserId },
+    { isRead: true },
+    { new: true } // Returns the updated document
+  );
 
-    if (!notification) {
-        const error = new Error('Notification not found or unauthorized.');
-        error.status = 404; 
-        throw error;
-    }
+  if (!notification) {
+    const error = new Error('Notification not found or unauthorized.');
+    error.status = 404;
+    throw error;
+  }
 
-    return notification; 
+  return notification;
 };
 
 
 // mark ALL notifications for a user as read
 const markAllNotificationsAsRead = async (userId) => {
-    const objectIdUserId = new mongoose.Types.ObjectId(userId);
+  const objectIdUserId = new mongoose.Types.ObjectId(userId);
 
-    await Notification.updateMany(
-        { user: objectIdUserId, isRead: false }, // Use the converted ObjectId
-        { isRead: true }
-    );
-    return { message: 'All notifications marked as read.' };
+  await Notification.updateMany(
+    { user: objectIdUserId, isRead: false }, // Use the converted ObjectId
+    { isRead: true }
+  );
+  return { message: 'All notifications marked as read.' };
 };
 
 

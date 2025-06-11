@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node src/index.js",
     "migrate-status": "node src/scripts/migrateUserStatus.js",
+    "migrate-order": "node src/scripts/migrate-orders.js",
+      "remove-delivery-method": "node src/scripts/remove-delivery-method.js",
+
     "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "echo \"Building the project...\""

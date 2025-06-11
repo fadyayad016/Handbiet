@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const User = require("../models/userAuth");
 const Order = require('../models/Order');
-const CookProfile = require("../models/CookProfile"); 
+const CookProfile = require("../models/CookProfile");
 const CustomerProfile = require("../models/CustomerProfile");
 
 
@@ -513,8 +513,121 @@ const deleteUserForAdmin = async (userId) => {
 
 }
 
+const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1, limit = 10) => {
+  let query = {};
+
+  // Filter by status if provided
+  if (status) {
+    query.status = status;
+  }
+  // Filter by date range if provided
+  if (startDate || endDate) {
+    query.createdAt = {}; // Orders are typically created at 'createdAt'
+    if (startDate) {
+      query.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      // Set end date to the end of the day for inclusive filtering
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt.$lte = end;
+    }
+  }
+  // Search by customer name, phone, or custom order ID
+  if (searchQuery) {
+    // Find customer IDs matching the search query (name or phone)
+    const User = mongoose.model('User');
+    const users = await User.find({
+      $or: [
+        { name: { $regex: searchQuery, $options: 'i' } },
+        { phone: { $regex: searchQuery, $options: 'i' } }
+      ]
+    }).select('_id');
+
+    const customerIds = users.map(user => user._id);
+
+    query.$or = [];
+    if (customerIds.length > 0) {
+      query.$or.push({ customer: { $in: customerIds } });
+    }
 
 
+    query.$or.push({ orderCode: { $regex: searchQuery, $options: 'i' } });
+
+    if (mongoose.Types.ObjectId.isValid(searchQuery)) {
+      query.$or.push({ _id: searchQuery });
+    }
+
+    if (query.$or.length === 0) {
+
+      query.$or = [{ _id: null }];
+    }
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Fetch orders, populate customer, cook, and meal details
+  const orders = await Order.find(query)
+    .populate({
+      path: 'customer',
+      select: 'name phone'
+    })
+    .populate({
+      path: 'cook',
+      select: 'name'
+    })
+    .populate({
+      path: 'meals.meal',
+      select: 'name price'
+    })
+    .sort({ createdAt: -1 }) // Sort by creation date, newest first
+    .skip(skip)
+    .limit(limit);
+
+  const totalOrders = await Order.countDocuments(query);
+
+  return {
+    orders,
+    totalOrders,
+    currentPage: page,
+    totalPages: Math.ceil(totalOrders / limit),
+    limit,
+  };
+};
+
+
+const getAdminOrderById = async (orderId) => {
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+        throw new Error('Invalid Order ID format.');
+    }
+
+        // Find the order by its ID and populate all necessary related data
+        const order = await Order.findById(orderId)
+            .populate({
+                path: 'customer',
+                select: 'firstName lastName  email'
+            })
+            .populate({
+                path: 'cook',
+                select: 'firstName lastName email' 
+            })
+            .populate({
+                path: 'meals.meal', 
+                select: 'name price description mainImage'
+               
+            })
+            .populate({
+                path: 'paymentId', 
+                select: 'amount status stripePaymentIntentId' 
+            })
+            .lean(); 
+        if (!order) {
+            return null; 
+        }
+
+        return order; 
+   
+};
 
 module.exports = {
   getUsersStats,
@@ -526,5 +639,7 @@ module.exports = {
   getAllOrdersForAdmin,
   getAllUsersForAdmin,
   updateUserForAdmin,
-  deleteUserForAdmin
-}
+  deleteUserForAdmin,
+  ordermonitoring,
+  getAdminOrderById
+};
