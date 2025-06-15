@@ -4,6 +4,7 @@ const mealController = require("../controllers/mealController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const ensureCustomerRole = require("../middlewares/ensureCustomerRole");
 const ensureCookRole = require("../middlewares/ensureCookRole");
+const ensureAdminRole = require("../middlewares/ensureAdminRole");
 
 // Cook routes
 router.get(
@@ -42,6 +43,7 @@ router.get(
   ensureCustomerRole,
   mealController.getFavoriteMeals
 );
+router.patch('/updateMealStatusByAdmin', authMiddleware, ensureAdminRole, mealController.updateMealStatusByAdmin);
 // Public
 router.get("/", mealController.browseMeals);
 router.get("/BestSellerMeal", mealController.getBestSellerMeal);

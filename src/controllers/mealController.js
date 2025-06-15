@@ -60,3 +60,12 @@ exports.getRandomMeals = asyncHandler(async (req, res) => {
   const meals = await mealService.getRandomMeal(take);
   res.status(200).json(meals);
 });
+
+
+exports.updateMealStatusByAdmin = asyncHandler(async (req, res) => {
+  const { mealId, action, rejectionReason } = req.body;
+  const adminId = req.user.id;
+  const meal = await mealService.updateMealStatusByAdmin(mealId, action, adminId, rejectionReason)
+
+  res.status(200).json(meal);
+});
