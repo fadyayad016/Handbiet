@@ -78,8 +78,11 @@ const createOrder = async (user, data) => {
 
     await Notification.create({
       user: cookId,
+      sender: user.id,
+
       order: newOrder._id,
       message: notificationMessage,
+      type: "order",
     });
     const io = require("../index").app.get("io");
     const connectedUsers = require("../index").app.get("connectedUsers");
@@ -265,6 +268,8 @@ const updateOrderStatus = async (user, body) => {
     user: order.customer,
     order: order._id,
     message,
+    type: "order",
+    sender: cookId,
   });
 
   // Send real-time notification via Socket.IO
@@ -299,7 +304,10 @@ const getAllNotifications = async (userId) => {
 
   const notifications = await Notification.find({ user: UserId })
     .sort({ createdAt: -1 })
-    .populate("user", "firstName lastName");
+    .populate("user", "firstName lastName")
+    .populate("sender", "firstName lastName role")
+    .populate("order", "orderCode status totalPrice")
+    .populate("meal", "name status mainImage");
 
   return notifications;
 };
