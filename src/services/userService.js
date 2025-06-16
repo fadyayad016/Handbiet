@@ -1,3 +1,4 @@
+const Meal = require("../models/Meal");
 const User = require("../models/userAuth");
 const mongoose = require("mongoose");
 
@@ -51,7 +52,20 @@ const updateCurrentUser = async (userData) => {
 const getAllCooks = async () => {
   try {
     const cooks = await User.find({ role: "cook" }).select("-password").lean();
-    return cooks; // Return the array directly
+
+    // Get order count for each cook
+    const Order = require("../models/Order");
+    const cooksWithOrderCount = await Promise.all(
+      cooks.map(async (cook) => {
+        const orderCount = await Order.countDocuments({ cook: cook._id });
+        return { ...cook, orderCount };
+      })
+    );
+
+    // Sort by orderCount descending
+    cooksWithOrderCount.sort((a, b) => b.orderCount - a.orderCount);
+
+    return cooksWithOrderCount;
   } catch (error) {
     throw new Error("Error fetching cooks: " + error.message);
   }
@@ -71,6 +85,10 @@ const getCookById = async (id) => {
     if (!cook) {
       throw new Error("Cook not found");
     }
+
+    const meals = await Meal.find({ cook: id }).lean();
+
+    cook.meals = meals || [];
 
     return cook;
   } catch (error) {

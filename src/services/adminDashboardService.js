@@ -1,13 +1,10 @@
 const mongoose = require("mongoose");
 const User = require("../models/userAuth");
-const Order = require('../models/Order');
+const Order = require("../models/Order");
 const CookProfile = require("../models/CookProfile");
 const CustomerProfile = require("../models/CustomerProfile");
 
-
-
 const getUsersStats = async () => {
-
   const now = new Date();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -30,7 +27,9 @@ const getUsersStats = async () => {
 
   const increase =
     usersLastMonth === 0
-      ? usersThisMonth > 0 ? 100 : 0
+      ? usersThisMonth > 0
+        ? 100
+        : 0
       : ((usersThisMonth - usersLastMonth) / usersLastMonth) * 100;
 
   return {
@@ -39,10 +38,7 @@ const getUsersStats = async () => {
     usersLastMonth,
     increasePercentage: Math.round(increase * 100) / 100,
   };
-
 };
-
-
 
 const getOrdersStats = async () => {
   const now = new Date();
@@ -71,7 +67,9 @@ const getOrdersStats = async () => {
   // Calculate percentage increase
   const increase =
     ordersLastMonth === 0
-      ? ordersThisMonth > 0 ? 100 : 0
+      ? ordersThisMonth > 0
+        ? 100
+        : 0
       : ((ordersThisMonth - ordersLastMonth) / ordersLastMonth) * 100;
 
   return {
@@ -82,8 +80,6 @@ const getOrdersStats = async () => {
   };
 };
 
-
-
 const getTotalRevenue = async () => {
   const now = new Date();
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -92,52 +88,61 @@ const getTotalRevenue = async () => {
 
   const totalRevenueResult = await Order.aggregate([
     {
-      $match: { status: 'completed' }
+      $match: { status: "completed" },
     },
     {
       $group: {
         _id: null,
-        totalAmount: { $sum: '$totalPrice' }
-      }
-    }
+        totalAmount: { $sum: "$totalPrice" },
+      },
+    },
   ]);
-  const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].totalAmount : 0;
+  const totalRevenue =
+    totalRevenueResult.length > 0 ? totalRevenueResult[0].totalAmount : 0;
 
   const revenueThisMonthResult = await Order.aggregate([
     {
       $match: {
-        status: 'completed',
-        createdAt: { $gte: startOfThisMonth }
-      }
+        status: "completed",
+        createdAt: { $gte: startOfThisMonth },
+      },
     },
     {
       $group: {
         _id: null,
-        totalAmount: { $sum: '$totalPrice' }
-      }
-    }
+        totalAmount: { $sum: "$totalPrice" },
+      },
+    },
   ]);
-  const revenueThisMonth = revenueThisMonthResult.length > 0 ? revenueThisMonthResult[0].totalAmount : 0;
+  const revenueThisMonth =
+    revenueThisMonthResult.length > 0
+      ? revenueThisMonthResult[0].totalAmount
+      : 0;
 
   const revenueLastMonthResult = await Order.aggregate([
     {
       $match: {
-        status: 'completed',
-        createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-      }
+        status: "completed",
+        createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+      },
     },
     {
       $group: {
         _id: null,
-        totalAmount: { $sum: '$totalPrice' }
-      }
-    }
+        totalAmount: { $sum: "$totalPrice" },
+      },
+    },
   ]);
-  const revenueLastMonth = revenueLastMonthResult.length > 0 ? revenueLastMonthResult[0].totalAmount : 0;
+  const revenueLastMonth =
+    revenueLastMonthResult.length > 0
+      ? revenueLastMonthResult[0].totalAmount
+      : 0;
 
   const increase =
     revenueLastMonth === 0
-      ? revenueThisMonth > 0 ? 100 : 0
+      ? revenueThisMonth > 0
+        ? 100
+        : 0
       : ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100;
 
   return {
@@ -146,11 +151,7 @@ const getTotalRevenue = async () => {
     revenueLastMonth,
     increasePercentage: Math.round(increase * 100) / 100,
   };
-
-
 };
-
-
 
 const getAverageOrderValue = async () => {
   const now = new Date();
@@ -160,8 +161,8 @@ const getAverageOrderValue = async () => {
 
   const calculateAOVForPeriod = async (startDate, endDate = now) => {
     const matchConditions = {
-      status: 'completed',
-      createdAt: { $gte: startDate }
+      status: "completed",
+      createdAt: { $gte: startDate },
     };
     if (endDate) {
       matchConditions.createdAt.$lte = endDate;
@@ -169,11 +170,16 @@ const getAverageOrderValue = async () => {
 
     const periodTotalRevenueResult = await Order.aggregate([
       { $match: matchConditions },
-      { $group: { _id: null, totalAmount: { $sum: '$totalPrice' } } }
+      { $group: { _id: null, totalAmount: { $sum: "$totalPrice" } } },
     ]);
-    const periodTotalRevenue = periodTotalRevenueResult.length > 0 ? periodTotalRevenueResult[0].totalAmount : 0;
+    const periodTotalRevenue =
+      periodTotalRevenueResult.length > 0
+        ? periodTotalRevenueResult[0].totalAmount
+        : 0;
 
-    const periodCompletedOrdersCount = await Order.countDocuments(matchConditions);
+    const periodCompletedOrdersCount = await Order.countDocuments(
+      matchConditions
+    );
 
     let periodAOV = 0;
     if (periodCompletedOrdersCount > 0) {
@@ -183,12 +189,17 @@ const getAverageOrderValue = async () => {
   };
 
   const overallTotalRevenueResult = await Order.aggregate([
-    { $match: { status: 'completed' } },
-    { $group: { _id: null, totalAmount: { $sum: '$totalPrice' } } }
+    { $match: { status: "completed" } },
+    { $group: { _id: null, totalAmount: { $sum: "$totalPrice" } } },
   ]);
-  const overallTotalRevenue = overallTotalRevenueResult.length > 0 ? overallTotalRevenueResult[0].totalAmount : 0;
+  const overallTotalRevenue =
+    overallTotalRevenueResult.length > 0
+      ? overallTotalRevenueResult[0].totalAmount
+      : 0;
 
-  const overallCompletedOrdersCount = await Order.countDocuments({ status: 'completed' });
+  const overallCompletedOrdersCount = await Order.countDocuments({
+    status: "completed",
+  });
 
   let averageOrderValue = 0;
   if (overallCompletedOrdersCount > 0) {
@@ -199,7 +210,10 @@ const getAverageOrderValue = async () => {
   const aovThisMonth = await calculateAOVForPeriod(startOfThisMonth);
 
   // 3. Calculate AOV for Last Month
-  const aovLastMonth = await calculateAOVForPeriod(startOfLastMonth, endOfLastMonth);
+  const aovLastMonth = await calculateAOVForPeriod(
+    startOfLastMonth,
+    endOfLastMonth
+  );
 
   // 4. Calculate Percentage Increase
   let increasePercentage = 0;
@@ -215,52 +229,64 @@ const getAverageOrderValue = async () => {
     aovLastMonth: Math.round(aovLastMonth * 100) / 100,
     increasePercentage: Math.round(increasePercentage * 100) / 100,
     totalRevenue: overallTotalRevenue,
-    completedOrdersCount: overallCompletedOrdersCount
+    completedOrdersCount: overallCompletedOrdersCount,
   };
 };
 
-
 const getMonthlyRevenue = async (months = 6) => {
   const now = new Date();
-  const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+  const startDate = new Date(
+    now.getFullYear(),
+    now.getMonth() - (months - 1),
+    1
+  );
   startDate.setHours(0, 0, 0, 0);
 
   const monthlyRevenue = await Order.aggregate([
     {
       $match: {
-        status: 'completed',
-        createdAt: { $gte: startDate }
-      }
+        status: "completed",
+        createdAt: { $gte: startDate },
+      },
     },
     {
       $group: {
         _id: {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' }
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
         },
-        totalMonthlyRevenue: { $sum: '$totalPrice' }
-      }
+        totalMonthlyRevenue: { $sum: "$totalPrice" },
+      },
     },
     {
       $sort: {
-        '_id.year': 1,
-        '_id.month': 1
-      }
+        "_id.year": 1,
+        "_id.month": 1,
+      },
     },
     {
       $project: {
         _id: 0,
-        year: '$_id.year',
-        month: '$_id.month',
-        totalMonthlyRevenue: { $round: ['$totalMonthlyRevenue', 2] }
-      }
-    }
+        year: "$_id.year",
+        month: "$_id.month",
+        totalMonthlyRevenue: { $round: ["$totalMonthlyRevenue", 2] },
+      },
+    },
   ]);
 
-
   const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
   const filledMonthlyRevenue = [];
@@ -268,15 +294,17 @@ const getMonthlyRevenue = async (months = 6) => {
   let currentYear = startDate.getFullYear();
 
   for (let i = 0; i < months; i++) {
-    const foundMonthData = monthlyRevenue.find(data =>
-      data.year === currentYear && data.month === (currentMonth + 1)
+    const foundMonthData = monthlyRevenue.find(
+      (data) => data.year === currentYear && data.month === currentMonth + 1
     );
 
     filledMonthlyRevenue.push({
       year: currentYear,
       monthNumber: currentMonth + 1,
       monthName: monthNames[currentMonth],
-      totalMonthlyRevenue: foundMonthData ? foundMonthData.totalMonthlyRevenue : 0
+      totalMonthlyRevenue: foundMonthData
+        ? foundMonthData.totalMonthlyRevenue
+        : 0,
     });
 
     currentMonth++;
@@ -286,56 +314,69 @@ const getMonthlyRevenue = async (months = 6) => {
     }
   }
 
-
   return filledMonthlyRevenue;
-
 };
 
-const getUserGrowth = async (months = 6) => { // months: Number of months to look back
+const getUserGrowth = async (months = 6) => {
+  // months: Number of months to look back
   const now = new Date();
   // Calculate the start date for the aggregation, going back 'months' from the current month.
-  const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+  const startDate = new Date(
+    now.getFullYear(),
+    now.getMonth() - (months - 1),
+    1
+  );
   startDate.setHours(0, 0, 0, 0); // Set time to midnight for accurate day start
 
   const monthlyUserCount = await User.aggregate([
     {
       // Stage 1: Filter users created within the required date range
       $match: {
-        createdAt: { $gte: startDate }
-      }
+        createdAt: { $gte: startDate },
+      },
     },
     {
       // Stage 2: Group users by registration year and month
       $group: {
         _id: {
-          year: { $year: '$createdAt' },
-          month: { $month: '$createdAt' } // $month returns month number (1-12)
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }, // $month returns month number (1-12)
         },
-        newUsers: { $sum: 1 } // Count each user in the group
-      }
+        newUsers: { $sum: 1 }, // Count each user in the group
+      },
     },
     {
       // Stage 3: Sort the results chronologically (from oldest to newest)
       $sort: {
-        '_id.year': 1,
-        '_id.month': 1
-      }
+        "_id.year": 1,
+        "_id.month": 1,
+      },
     },
     {
       // Stage 4: Reshape the output data for easier frontend consumption
       $project: {
         _id: 0,
-        year: '$_id.year',
-        month: '$_id.month',
-        newUsers: 1
-      }
-    }
+        year: "$_id.year",
+        month: "$_id.month",
+        newUsers: 1,
+      },
+    },
   ]);
 
   // Logic to fill in months with zero new users for complete data series
   const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
   const filledMonthlyUserCount = [];
@@ -343,15 +384,15 @@ const getUserGrowth = async (months = 6) => { // months: Number of months to loo
   let currentYear = startDate.getFullYear();
 
   for (let i = 0; i < months; i++) {
-    const foundMonthData = monthlyUserCount.find(data =>
-      data.year === currentYear && data.month === (currentMonth + 1) // Match with $month (1-12)
+    const foundMonthData = monthlyUserCount.find(
+      (data) => data.year === currentYear && data.month === currentMonth + 1 // Match with $month (1-12)
     );
 
     filledMonthlyUserCount.push({
       year: currentYear,
       monthNumber: currentMonth + 1,
       monthName: monthNames[currentMonth],
-      newUsers: foundMonthData ? foundMonthData.newUsers : 0
+      newUsers: foundMonthData ? foundMonthData.newUsers : 0,
     });
 
     currentMonth++;
@@ -362,21 +403,24 @@ const getUserGrowth = async (months = 6) => { // months: Number of months to loo
   }
 
   return filledMonthlyUserCount;
-
-
 };
-
-const getAllOrdersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1) => {
+const getAllOrdersForAdmin = async (
+  page = 1,
+  limit = 10,
+  sortBy = "createdAt",
+  sortOrder = -1
+) => {
   const skip = (page - 1) * limit;
 
   // Count total orders for pagination info
   const totalOrders = await Order.countDocuments();
   const orders = await Order.find({})
-    .populate('customer', 'firstName lastName email') // Get customer's name and email
-    .populate('cook', 'firstName lastName email')     // Get cook's name and email
+    .populate("customer", "firstName lastName email") // Get customer's name and email
+    .populate("cook", "firstName lastName email") // Get cook's name and email
+    .populate("meals.meal", "name price description mainImage") // Get meal details
     .sort({ [sortBy]: sortOrder }) // Sort by the specified field and order (-1 for descending, 1 for ascending)
     .skip(skip) // Skip documents for pagination
-    .limit(limit); // Limit the number of documents per page
+    .limit(limit === -1 ? 0 : limit); // Limit the number of documents per page
 
   return {
     orders,
@@ -385,9 +429,41 @@ const getAllOrdersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', 
     totalPages: Math.ceil(totalOrders / limit), // Calculate total pages
     limit,
   };
-
 };
-const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', sortOrder = -1, role = null, searchkeyword = null, userStatus = null) => {
+// const getAllOrdersForAdmin = async (
+//   page = 1,
+//   limit = 10,
+//   sortBy = "createdAt",
+//   sortOrder = -1
+// ) => {
+//   const skip = (page - 1) * limit;
+
+//   // Count total orders for pagination info
+//   const totalOrders = await Order.countDocuments();
+//   const orders = await Order.find({})
+//     .populate("customer", "firstName lastName email") // Get customer's name and email
+//     .populate("cook", "firstName lastName email") // Get cook's name and email
+//     .sort({ [sortBy]: sortOrder }) // Sort by the specified field and order (-1 for descending, 1 for ascending)
+//     .skip(skip) // Skip documents for pagination
+//     .limit(limit === -1 ? 0 : limit); // Limit the number of documents per page
+
+//   return {
+//     orders,
+//     totalOrders,
+//     currentPage: page,
+//     totalPages: Math.ceil(totalOrders / limit), // Calculate total pages
+//     limit,
+//   };
+// };
+const getAllUsersForAdmin = async (
+  page = 1,
+  limit = 10,
+  sortBy = "createdAt",
+  sortOrder = -1,
+  role = null,
+  searchkeyword = null,
+  userStatus = null
+) => {
   const skip = (page - 1) * limit;
 
   let query = {};
@@ -396,7 +472,9 @@ const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', s
     if (["customer", "cook", "admin"].includes(role)) {
       query.role = role;
     } else {
-      console.warn(`Invalid role provided: ${role}. Filtering by role will be ignored.`);
+      console.warn(
+        `Invalid role provided: ${role}. Filtering by role will be ignored.`
+      );
     }
   }
 
@@ -405,7 +483,7 @@ const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', s
   }
 
   if (searchkeyword) {
-    const searchRegex = new RegExp(searchkeyword, 'i');
+    const searchRegex = new RegExp(searchkeyword, "i");
     query.$or = [
       { firstName: { $regex: searchRegex } },
       { lastName: { $regex: searchRegex } },
@@ -414,7 +492,7 @@ const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', s
   }
 
   const sortOptions = {};
-  if (sortBy === 'lastLogin') {
+  if (sortBy === "lastLogin") {
     sortOptions.updatedAt = sortOrder;
   } else if (sortBy) {
     sortOptions[sortBy] = sortOrder;
@@ -423,22 +501,21 @@ const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', s
   }
 
   const users = await User.find(query)
-    .select('-password')
+    .select("-password")
     .skip(skip)
     .limit(limit)
     .sort(sortOptions)
     .lean();
-  const usersWithOrderCount = await Promise.all(users.map(async (user) => {
-    // Count orders where the user is either the customer or the cook
-    const orderCount = await Order.countDocuments({
-      $or: [
-        { customer: user._id },
-        { cook: user._id }
-      ]
-    });
-    // Return the user object with the new orderCount property
-    return { ...user, orderCount };
-  }));
+  const usersWithOrderCount = await Promise.all(
+    users.map(async (user) => {
+      // Count orders where the user is either the customer or the cook
+      const orderCount = await Order.countDocuments({
+        $or: [{ customer: user._id }, { cook: user._id }],
+      });
+      // Return the user object with the new orderCount property
+      return { ...user, orderCount };
+    })
+  );
 
   const total = await User.countDocuments(query);
 
@@ -450,34 +527,33 @@ const getAllUsersForAdmin = async (page = 1, limit = 10, sortBy = 'createdAt', s
     limit: limit,
     totalPages: Math.ceil(total / limit),
   };
-
 };
-
-
 
 const updateUserForAdmin = async (userId, data) => {
   if (data.password) {
     delete data.password;
-    console.warn("Attempted to update password directly via admin update. Ignoring password field.");
+    console.warn(
+      "Attempted to update password directly via admin update. Ignoring password field."
+    );
   }
   if (data.refreshToken) {
     delete data.refreshToken;
-    console.warn("Attempted to update refresh token directly via admin update. Ignoring refresh token field.");
+    console.warn(
+      "Attempted to update refresh token directly via admin update. Ignoring refresh token field."
+    );
   }
 
   const updatedUser = await User.findByIdAndUpdate(
     userId,
     { $set: data },
     { new: true, runValidators: true }
-  ).select('-password, -refreshToken');
+  ).select("-password, -refreshToken");
 
   if (!updatedUser) {
     throw new Error(`User with ID ${userId} not found.`);
   }
 
   return updatedUser;
-
-
 };
 
 const deleteUserForAdmin = async (userId) => {
@@ -491,29 +567,37 @@ const deleteUserForAdmin = async (userId) => {
   }
 
   // Clean up associated profiles (CookProfile, CustomerProfile)
-  if (deletedUser.role === 'cook' && deletedUser.cookProfile) {
+  if (deletedUser.role === "cook" && deletedUser.cookProfile) {
     await CookProfile.findByIdAndDelete(deletedUser.cookProfile, { session });
   }
-  if (deletedUser.role === 'customer' && deletedUser.customerProfile) {
-    await CustomerProfile.findByIdAndDelete(deletedUser.customerProfile, { session });
+  if (deletedUser.role === "customer" && deletedUser.customerProfile) {
+    await CustomerProfile.findByIdAndDelete(deletedUser.customerProfile, {
+      session,
+    });
   }
 
-
-  await Order.deleteMany({
-    $or: [{ customer: userId }, { cook: userId }]
-  }, { session });
+  await Order.deleteMany(
+    {
+      $or: [{ customer: userId }, { cook: userId }],
+    },
+    { session }
+  );
   console.log(` Deleted all orders associated with user ${userId}.`);
-
-
 
   await session.commitTransaction();
   session.endSession();
 
   return deletedUser;
+};
 
-}
-
-const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1, limit = 10) => {
+const ordermonitoring = async (
+  status,
+  searchQuery,
+  startDate,
+  endDate,
+  page = 1,
+  limit = 10
+) => {
   let query = {};
 
   // Filter by status if provided
@@ -536,30 +620,28 @@ const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1
   // Search by customer name, phone, or custom order ID
   if (searchQuery) {
     // Find customer IDs matching the search query (name or phone)
-    const User = mongoose.model('User');
+    const User = mongoose.model("User");
     const users = await User.find({
       $or: [
-        { name: { $regex: searchQuery, $options: 'i' } },
-        { phone: { $regex: searchQuery, $options: 'i' } }
-      ]
-    }).select('_id');
+        { name: { $regex: searchQuery, $options: "i" } },
+        { phone: { $regex: searchQuery, $options: "i" } },
+      ],
+    }).select("_id");
 
-    const customerIds = users.map(user => user._id);
+    const customerIds = users.map((user) => user._id);
 
     query.$or = [];
     if (customerIds.length > 0) {
       query.$or.push({ customer: { $in: customerIds } });
     }
 
-
-    query.$or.push({ orderCode: { $regex: searchQuery, $options: 'i' } });
+    query.$or.push({ orderCode: { $regex: searchQuery, $options: "i" } });
 
     if (mongoose.Types.ObjectId.isValid(searchQuery)) {
       query.$or.push({ _id: searchQuery });
     }
 
     if (query.$or.length === 0) {
-
       query.$or = [{ _id: null }];
     }
   }
@@ -569,16 +651,16 @@ const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1
   // Fetch orders, populate customer, cook, and meal details
   const orders = await Order.find(query)
     .populate({
-      path: 'customer',
-      select: 'name phone'
+      path: "customer",
+      select: "name phone",
     })
     .populate({
-      path: 'cook',
-      select: 'name'
+      path: "cook",
+      select: "name",
     })
     .populate({
-      path: 'meals.meal',
-      select: 'name price'
+      path: "meals.meal",
+      select: "name price",
     })
     .sort({ createdAt: -1 }) // Sort by creation date, newest first
     .skip(skip)
@@ -595,38 +677,35 @@ const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1
   };
 };
 
-
 const getAdminOrderById = async (orderId) => {
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-        throw new Error('Invalid Order ID format.');
-    }
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new Error("Invalid Order ID format.");
+  }
 
-        // Find the order by its ID and populate all necessary related data
-        const order = await Order.findById(orderId)
-            .populate({
-                path: 'customer',
-                select: 'firstName lastName  email'
-            })
-            .populate({
-                path: 'cook',
-                select: 'firstName lastName email' 
-            })
-            .populate({
-                path: 'meals.meal', 
-                select: 'name price description mainImage'
-               
-            })
-            .populate({
-                path: 'paymentId', 
-                select: 'amount status stripePaymentIntentId' 
-            })
-            .lean(); 
-        if (!order) {
-            return null; 
-        }
+  // Find the order by its ID and populate all necessary related data
+  const order = await Order.findById(orderId)
+    .populate({
+      path: "customer",
+      select: "firstName lastName  email",
+    })
+    .populate({
+      path: "cook",
+      select: "firstName lastName email",
+    })
+    .populate({
+      path: "meals.meal",
+      select: "name price description mainImage",
+    })
+    .populate({
+      path: "paymentId",
+      select: "amount status stripePaymentIntentId",
+    })
+    .lean();
+  if (!order) {
+    return null;
+  }
 
-        return order; 
-   
+  return order;
 };
 
 module.exports = {
@@ -641,5 +720,5 @@ module.exports = {
   updateUserForAdmin,
   deleteUserForAdmin,
   ordermonitoring,
-  getAdminOrderById
+  getAdminOrderById,
 };
