@@ -21,5 +21,5 @@ router.put('/updateUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDash
 router.delete('/deleteUserForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.deleteUserForAdmin);
 router.get('/ordermonitoring', authMiddleware, ensureAdminRole, adminDashboardController.ordermonitoring);
 router.get('/getAdminOrderById/:id', authMiddleware, ensureAdminRole, adminDashboardController.getAdminOrderById);
-
+router.get ('/getAllMealsForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getmealforadmin);
 module.exports = router;

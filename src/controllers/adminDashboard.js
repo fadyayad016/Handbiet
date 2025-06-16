@@ -142,14 +142,19 @@ exports.ordermonitoring = asyncHandler(async (req, res) => {
 });
 
 
-exports.getAdminOrderById= asyncHandler(async (req, res) => {
-    const orderId = req.params.id; 
+exports.getAdminOrderById = asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
     const order = await adminDashboardService.getAdminOrderById(orderId);
-
-  
-
     res.status(200).json({
         message: 'Order fetched successfully',
         order,
+    });
+})
+
+exports.getmealforadmin = asyncHandler(async (req, res) => {
+    const meal = await adminDashboardService.getMealForAdmin();
+    res.status(200).json({
+        message: 'Meals fetched successfully for admin dashboard',
+        meal,
     });
 })

@@ -3,6 +3,8 @@ const User = require("../models/userAuth");
 const Order = require('../models/Order');
 const CookProfile = require("../models/CookProfile");
 const CustomerProfile = require("../models/CustomerProfile");
+const Meal = require("../models/Meal");
+
 
 
 
@@ -597,37 +599,48 @@ const ordermonitoring = async (status, searchQuery, startDate, endDate, page = 1
 
 
 const getAdminOrderById = async (orderId) => {
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-        throw new Error('Invalid Order ID format.');
-    }
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new Error('Invalid Order ID format.');
+  }
 
-        // Find the order by its ID and populate all necessary related data
-        const order = await Order.findById(orderId)
-            .populate({
-                path: 'customer',
-                select: 'firstName lastName  email'
-            })
-            .populate({
-                path: 'cook',
-                select: 'firstName lastName email' 
-            })
-            .populate({
-                path: 'meals.meal', 
-                select: 'name price description mainImage'
-               
-            })
-            .populate({
-                path: 'paymentId', 
-                select: 'amount status stripePaymentIntentId' 
-            })
-            .lean(); 
-        if (!order) {
-            return null; 
-        }
+  // Find the order by its ID and populate all necessary related data
+  const order = await Order.findById(orderId)
+    .populate({
+      path: 'customer',
+      select: 'firstName lastName  email'
+    })
+    .populate({
+      path: 'cook',
+      select: 'firstName lastName email'
+    })
+    .populate({
+      path: 'meals.meal',
+      select: 'name price description mainImage'
 
-        return order; 
-   
+    })
+    .populate({
+      path: 'paymentId',
+      select: 'amount status stripePaymentIntentId'
+    })
+    .lean();
+  if (!order) {
+    return null;
+  }
+
+  return order;
+
 };
+
+
+const getMealForAdmin = async () => {
+  const meals = await Meal.find({})
+    .populate('cook', 'firstName lastName email')
+    .sort({ createdAt: -1 })
+    .lean();
+  return {
+    meals,
+  };
+}
 
 module.exports = {
   getUsersStats,
@@ -641,5 +654,6 @@ module.exports = {
   updateUserForAdmin,
   deleteUserForAdmin,
   ordermonitoring,
-  getAdminOrderById
+  getAdminOrderById,
+  getMealForAdmin
 };
