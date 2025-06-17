@@ -96,8 +96,8 @@ const addReview = async (customerId, orderId, mealId, rating, comment) => {
 
 const getMealReviews = async (mealId) => {
     const reviews = await Review.find({ meal: mealId })
-        .populate('customer', 'name profilePicture')
-        .populate('cook', 'name profilePicture')
+        .populate('customer', 'firstName lastName profilePicture')
+        .populate('cook', 'firstName lastName profilePicture')
         .sort({ createdAt: -1 }); // Sort by most recent first
     return reviews;
 };  
