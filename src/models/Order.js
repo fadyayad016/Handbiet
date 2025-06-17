@@ -49,7 +49,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       unique: true,
 
-    }
+    },
+    isReviewed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
