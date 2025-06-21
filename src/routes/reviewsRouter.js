@@ -12,4 +12,5 @@ const reviewsController = require('../controllers/reviews');
 router.post('/addReview', authMiddleware, ensureCustomerRole, reviewsController.addReview);
 
 router.get('/getReviewsByMeal/:id', reviewsController.getmealreviews);
+router.get('/getbestcooks', reviewsController.getBestCooks);    
 module.exports = router;

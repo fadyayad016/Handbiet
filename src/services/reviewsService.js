@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Review = require("../models/Review");
 const Order = require("../models/Order");
-const Meal = require("../models/Meal"); 
+const Meal = require("../models/Meal");
 const User = require("../models/userAuth");
 
 
@@ -15,7 +15,7 @@ const addReview = async (customerId, orderId, mealId, rating, comment) => {
     const order = await Order.findOne({
         _id: orderId,
         customer: customerId,
-        status: "completed" 
+        status: "completed"
     }).populate('meals.meal');
 
     if (!order) {
@@ -78,7 +78,7 @@ const addReview = async (customerId, orderId, mealId, rating, comment) => {
         await cookUser.save();
     }
 
-    
+
     const allMealsReviewed = await Promise.all(order.meals.map(async (item) => {
         const existingMealReview = await Review.findOne({ order: orderId, meal: item.meal._id, customer: customerId });
         return !!existingMealReview;
@@ -100,9 +100,73 @@ const getMealReviews = async (mealId) => {
         .populate('cook', 'firstName lastName profilePicture')
         .sort({ createdAt: -1 }); // Sort by most recent first
     return reviews;
-};  
+};
+
+const getbestcooksDependingOnRating = async () => {
+    const cookRatings = await Review.aggregate([
+        {
+            $group: {
+                _id: '$cook',
+                averageRating: { $avg: '$rating' }, // Calculate average rating
+                totalReviews: { $sum: 1 } // Count total reviews
+            }
+        },
+        {
+            // Filter out cooks who don't meet the 4.5 rating threshold
+            $match: {
+                averageRating: { $gte: 4.5 }
+            }
+        },
+        {
+            $sort: {
+                averageRating: -1,
+                totalReviews: -1
+            }
+        },
+        {
+            $limit: 10
+        }
+    ]);
+
+    // If no cooks meet the criteria, return an empty array
+    if (cookRatings.length === 0) {
+        return [];
+    }
+
+    // Extract the IDs of the top 10 cooks from the aggregation result
+    const topCookIds = cookRatings.map(cook => cook._id);
+
+
+    const topCooks = await User.find({
+        _id: { $in: topCookIds },
+        role: "cook"
+    })
+        .lean();
+
+    const orderedCooks = topCookIds.map(id =>
+        topCooks.find(cook => cook._id.equals(id))
+    ).filter(Boolean); // Filter out any potential nulls if a cook wasn't found (unlikely here)
+
+
+    const finalCooks = orderedCooks.map(cook => {
+        const ratingData = cookRatings.find(cr => cr._id.equals(cook._id));
+        return {
+            ...cook,
+            cookProfile: { 
+                ...cook.cookProfile, 
+                averageRating: ratingData ? ratingData.averageRating : 0,
+                totalReviews: ratingData ? ratingData.totalReviews : 0
+            }
+        };
+    });
+
+    return finalCooks;
+
+};
+
 
 module.exports = {
-    addReview    ,
-    getMealReviews      
- }
+    addReview,
+    getMealReviews,
+    getbestcooksDependingOnRating
+}
