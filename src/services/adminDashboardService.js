@@ -3,6 +3,7 @@ const User = require("../models/userAuth");
 const Order = require("../models/Order");
 const CookProfile = require("../models/CookProfile");
 const CustomerProfile = require("../models/CustomerProfile");
+const Meal = require("../models/Meal");
 
 const getUsersStats = async () => {
   const now = new Date();
@@ -706,6 +707,16 @@ const getAdminOrderById = async (orderId) => {
   }
 
   return order;
+};
+
+const getMealForAdmin = async () => {
+  const meals = await Meal.find({})
+    .populate("cook", "firstName lastName email")
+    .sort({ createdAt: -1 })
+    .lean();
+  return {
+    meals,
+  };
 };
 
 module.exports = {
