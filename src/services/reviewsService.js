@@ -141,6 +141,7 @@ const getbestcooksDependingOnRating = async () => {
         _id: { $in: topCookIds },
         role: "cook"
     })
+     .select('-password -refreshToken')
         .lean();
 
     const orderedCooks = topCookIds.map(id =>
