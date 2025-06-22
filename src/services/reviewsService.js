@@ -59,13 +59,13 @@ const addReview = async (customerId, orderId, mealId, rating, comment) => {
     await review.save();
 
     // 6. Update the Meal's rating
-    const meal = await Meal.findById(mealId);
+    const meal = await Meal.findById(mealId); // Get the meal document
     if (meal) {
-        // Find existing reviews for this meal
-        const mealReviews = await Review.find({ meal: mealId });
+        meal.reviews.push(review._id); 
+        const mealReviews = await Review.find({ meal: mealId }); // This will now include the new review
         const totalRating = mealReviews.reduce((sum, r) => sum + r.rating, 0);
         meal.rating = mealReviews.length > 0 ? totalRating / mealReviews.length : 0;
-        await meal.save();
+        await meal.save(); // Save the meal with the new review ID and updated rating
     }
 
     // 7. Update the Cook's average rating and total reviews

@@ -1,7 +1,7 @@
 const Meal = require("../models/Meal");
 const User = require("../models/userAuth");
 const Notification = require("../models/Notification");
-
+const review = require("../models/Review");
 const mongoose = require("mongoose");
 
 const createMeal = async (cookId, data) => {
@@ -130,12 +130,22 @@ const browseMeals = async (filters) => {
     "firstName lastName profilePicture"
   );
 };
-
+//add to return review 
 const getMealById = async (id) => {
   return await Meal.findById(id).populate(
     "cook",
     "firstName lastName profilePicture"
-  );
+  )
+   .populate({
+        path: "reviews",
+        model: "Review",
+        select: "-_id -order -meal -cook -__v", 
+        populate: {
+            path: "customer",
+            model: "User",
+            select: "firstName lastName profilePicture",
+        },
+    });
 };
 
 const addFavoriteMeal = async (customerId, mealId) => {

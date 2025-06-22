@@ -719,6 +719,28 @@ const getMealForAdmin = async () => {
   };
 };
 
+const updateMealStatusForAdmin = async (mealId, updateData) => {
+    if (!mongoose.Types.ObjectId.isValid(mealId)) {
+        throw new Error("Invalid Meal ID format.");
+    }
+
+    if (!updateData || !updateData.status) {
+        throw new Error("Status property is missing in update data.");
+    }
+
+    const updatedMeal = await Meal.findByIdAndUpdate(
+        mealId,
+        { status: updateData.status },
+        { new: true, runValidators: true }
+    ).populate("cook", "firstName lastName email");
+
+    if (!updatedMeal) {
+        throw new Error(`Meal with ID ${mealId} not found.`);
+    }
+
+    return updatedMeal;
+};
+
 module.exports = {
   getUsersStats,
   getOrdersStats,
@@ -732,4 +754,5 @@ module.exports = {
   deleteUserForAdmin,
   ordermonitoring,
   getAdminOrderById,
+  updateMealStatusForAdmin
 };

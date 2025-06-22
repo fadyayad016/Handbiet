@@ -22,4 +22,5 @@ router.delete('/deleteUserForAdmin/:id', authMiddleware, ensureAdminRole, adminD
 router.get('/ordermonitoring', authMiddleware, ensureAdminRole, adminDashboardController.ordermonitoring);
 router.get('/getAdminOrderById/:id', authMiddleware, ensureAdminRole, adminDashboardController.getAdminOrderById);
 router.get ('/getAllMealsForAdmin', authMiddleware, ensureAdminRole, adminDashboardController.getmealforadmin);
+router.patch('/updateMealForAdmin/:id', authMiddleware, ensureAdminRole, adminDashboardController.updateMealstatusForAdmin);
 module.exports = router;

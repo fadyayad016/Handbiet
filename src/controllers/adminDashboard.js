@@ -158,3 +158,14 @@ exports.getmealforadmin = asyncHandler(async (req, res) => {
         meal,
     });
 })
+
+exports.updateMealstatusForAdmin= asyncHandler (async (req, res) => {
+    const mealId = req.params.id;
+    const updateData = req.body;
+    const updatedMeal = await adminDashboardService.updateMealStatusForAdmin(mealId, updateData);
+
+    res.status(200).json({
+        message: 'Meal status updated successfully',
+        meal: updatedMeal,
+    });
+})
