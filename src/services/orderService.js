@@ -264,7 +264,7 @@ const updateOrderStatus = async (user, body) => {
 
   const message = `Your order was ${order.status} by ${cookName}.`;
 
-  await Notification.create({
+  const notification = await Notification.create({
     user: order.customer,
     order: order._id,
     message,
@@ -286,6 +286,7 @@ const updateOrderStatus = async (user, body) => {
       orderId: order._id,
       status: order.status,
       cookName: cookName,
+      notificationId: notification._id,
     });
     console.log(
       `Order status update sent to customer ${order.customer} via Socket.IO`

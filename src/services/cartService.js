@@ -64,6 +64,9 @@ const updateCartItem = async (user, data) => {
 };
 
 const removeFromCart = async (user, mealId) => {
+  if (!mealId || !mongoose.Types.ObjectId.isValid(mealId)) {
+    throw new Error("Invalid mealId");
+  }
   const mealObjectId = new mongoose.Types.ObjectId(mealId);
   const cart = await Cart.findOne({ customer: user.id });
   if (!cart) {
@@ -86,4 +89,23 @@ const removeFromCart = async (user, mealId) => {
   };
 };
 
-module.exports = { getCart, addToCart, updateCartItem, removeFromCart };
+const clearCart = async (user) => {
+  const cart = await Cart.findOne({ customer: user.id });
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
+  cart.items = [];
+  await cart.save();
+  return {
+    message: "All items removed from cart",
+    cart,
+  };
+};
+
+module.exports = {
+  getCart,
+  addToCart,
+  updateCartItem,
+  removeFromCart,
+  clearCart,
+};
