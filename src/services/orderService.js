@@ -74,7 +74,7 @@ const createOrder = async (user, data) => {
       });
     }
     const customerName = `${user.firstName} ${user.lastName}`;
-    const notificationMessage = `You have received a new order from ${customerName}.`;
+    const notificationMessage = `لقد استلمت طلبًا جديدًا من ${customerName}.`;
 
     await Notification.create({
       user: cookId,
