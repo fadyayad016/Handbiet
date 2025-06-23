@@ -262,7 +262,15 @@ const updateOrderStatus = async (user, body) => {
 
   await order.save();
 
-  const message = `Your order was ${order.status} by ${cookName}.`;
+  const message = `تم تحديث حالة طلبك إلى ${
+    order.status === "accepted"
+      ? "مقبول"
+      : order.status === "completed"
+      ? "مكتمل"
+      : order.status === "cancelled"
+      ? "ملغي"
+      : order.status
+  } بواسطة ${cookName}.`;
 
   const notification = await Notification.create({
     user: order.customer,
